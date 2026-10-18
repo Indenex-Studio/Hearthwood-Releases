@@ -35,32 +35,38 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 - Walk-in clay hut with a tamped clay floor and windows with board shutters.
 - A bracken bed in the lean-to, a taller lean-to, and building sites that tell you how to make what they need.
 - Hang a door from the right-click menu, and take down a finished build from it too.
+- A build's name note says who built it ("Bench, built by Mara").
 
 **Sailing**
 - Log raft, and a plank boat with a reed sail. Wind matters, and a boat that is going fast looks it.
 - Right-click a boat for its menu. Seamanship shows in the sail, and the map shows the wind.
-- The plank boat's sail lets out square to the wind, and you sit at the helm.
+- Boats make their own sounds on the water.
+- The plank boat's sail lets out square to the wind, and you sit at the helm. The reed sail fills out near top speed.
 
 **Playing together**
 - Share your home with a friend from the right-click menu on that person.
 - Right-click menus on doors, fires, hearths, baskets, chests, jars, kilns, lamps, troughs, drying clay, drying racks, snares, benches and rest spots. They replace the V, Shift+E and Z keys.
 - Sit and lie down are on the emote wheel now, so H is free.
+- The key list (F1) shows every right-click menu.
 - At rank 50, Potter and Builder choose a focus to specialise in.
 - Kit and Capling join Pebble and Bramble. All four have smooth bodies, painted heads and more look choices.
 
 **Look and sound**
 - Pines grow needle clumps, giant pines look fuller, and thatch roofs are shaded.
 - The wool tunic is remade as a small crumpled T with a soft cord belt.
+- Gorse looks right again, with no floating spikes or yellow beads.
 - Your woven back basket shows on your back, and other players see it too.
 - Different music in each area and at dawn.
 
 **Launcher**
 - The game is now called Hearthwood. The launcher reads new builds from its new home.
+- The launcher has a "Patch notes" link that opens this page.
 
 **Fixes**
 - Esc opens the menu again every time.
 - A boiled egg can be eaten. Trees fade only when they hide your body.
 - The game and server run lighter: grass detail levels, Medium graphics preset lighter than High.
+- The journal has an item book: linked boxes show what goes into what.
 - Skills have their own page on K. Words across the game are plainer.
 
 ## 17 October
