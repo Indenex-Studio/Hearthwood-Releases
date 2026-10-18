@@ -327,7 +327,8 @@ function Do-Status {
   $s = Load-Settings
   if (-not (Distro-Exists)) { Die 'The Linux system is missing. Run: setup' }
   Write-Host "Registered: $($s.max)   running (wanted): $($s.want)   threads: $($s.cores)   memory: $($s.memGB) GB"
-  $run = (& wsl.exe -l --running) -replace "`0", ''
+  # Join the lines first: -notmatch on an array filters it instead of answering true/false.
+  $run = ((& wsl.exe -l --running -q) -replace "`0", '') -join "`n"
   if ($run -notmatch $Distro) { Write-Host 'The Linux system is stopped (use: start).'; return }
   Run-Linux 'hwbox status'
 }
