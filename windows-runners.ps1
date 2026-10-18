@@ -30,7 +30,7 @@
 # Written for Windows PowerShell 5.1 and newer.
 param(
   [Parameter(Position = 0)]
-  [ValidateSet('setup', 'status', 'stop', 'start', 'scale', 'teardown')]
+  [ValidateSet('setup', 'finish', 'status', 'stop', 'start', 'scale', 'teardown')]
   [string]$Command = 'setup',
   [int]$Count = 0,        # how many runners to run (at most what setup registered)
   [int]$Cores = 0,        # threads the Linux system may use in total
@@ -47,6 +47,7 @@ $Prefix   = 'friend-w'
 $Label    = 'friend'
 $Task     = 'HearthwoodRunnersKeepAlive'
 $BoxUrl   = 'https://raw.githubusercontent.com/Indenex-Studio/Hearthwood-Releases/main/ci-box.sh'
+$SelfUrl  = 'https://raw.githubusercontent.com/Indenex-Studio/Hearthwood-Releases/main/windows-runners.ps1'
 # Mode of ci-box.sh: setup-plain = containers without the extra restrictions (the Linux VM is the safety boundary here),
 # no pinning of runners to cores (so -Cores can change freely).
 $BoxMode  = 'setup-plain'
@@ -282,18 +283,24 @@ TOTAL_MEM=${capMem}G
   Write-Host 'Now one thing from you:' -ForegroundColor Yellow
   Write-Host '  1. Open https://github.com/organizations/Indenex-Studio/settings/actions/runners/new  (you need to be an owner of the organization; if not, ask Justin for the token)'
   Write-Host '  2. In the "Configure" box, copy the long code after --token  (valid for 1 hour)'
-  Write-Host '  3. Paste it here and press Enter (it is not shown)'
+  Write-Host '  3. Paste it here and press Enter (it is not shown). Running setup again with everything registered? Just press Enter.'
   Write-Host ''
   $sec = Read-Host 'Token' -AsSecureString
   $token = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)).Trim()
-  if (-not $token) { Die 'No token given.' }
+  # An empty token is fine when every runner is already registered (running setup again); ci-box.sh says if one is needed.
   Say "Building the runner image and registering $max runners (this takes several minutes)..."
   Run-Linux "/usr/local/bin/hwbox $BoxMode" ($token + "`n")
   $token = $null
 
+  Finish-Setup $max $useCores $useMem
+}
+
+# Step 5 of setup: run the wanted number now and at every Windows start, and leave hw.cmd for later commands.
+function Finish-Setup([int]$max, [int]$useCores, [int]$useMem) {
   # 5. Run the wanted number, and again at every Windows start
   Run-Linux 'systemctl daemon-reload && systemctl enable hw-scale.service'
-  Copy-Item -Path $PSCommandPath -Destination (Join-Path $Dir 'hearthwood-runners.ps1') -Force -ErrorAction SilentlyContinue
+  # Keep a copy of this script next to hw.cmd (downloaded again, since $PSCommandPath can be empty).
+  Invoke-WebRequest -UseBasicParsing -Uri $SelfUrl -OutFile (Join-Path $Dir 'hearthwood-runners.ps1')
   Set-Content -Path (Join-Path $Dir 'hw.cmd') -Encoding ASCII -Value '@powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0hearthwood-runners.ps1" %*'
   $want = $max
   Save-Settings @{ max = $max; want = $want; cores = $useCores; memGB = $useMem }
@@ -301,6 +308,19 @@ TOTAL_MEM=${capMem}G
   Start-Sleep -Seconds 15
   Do-Status
   Say "Done. Later commands (in an admin PowerShell):  $Dir\hw.cmd status  |  stop  |  start  |  scale -Count 4  |  teardown"
+}
+
+# Finishes a setup that stopped after registering (no new token, no WSL restart, running jobs keep going).
+function Do-Finish {
+  if (-not (Test-Admin)) { Die 'Open PowerShell with "Run as administrator" and run this again.' }
+  if (-not (Distro-Exists)) { Die 'The Linux system is missing. Run: setup' }
+  $threads = [int](Get-CimInstance Win32_Processor | Measure-Object -Property NumberOfLogicalProcessors -Sum).Sum
+  $ramGB = [int][math]::Floor((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
+  $useCores = [int][math]::Max(2, $threads - 4); if ($Cores -gt 0) { $useCores = $Cores }
+  $useMem = [int][math]::Floor($ramGB * 0.75); if ($MemoryGB -gt 0) { $useMem = $MemoryGB }
+  $max = [int]((& wsl.exe -d $Distro -u root -- sh -c '. /etc/hw-runner.env; echo $COUNT') | Select-Object -Last 1)
+  if ($max -lt 1) { Die 'No runners are registered yet. Run: setup' }
+  Finish-Setup $max $useCores $useMem
 }
 
 function Do-Status {
@@ -385,6 +405,7 @@ function Do-Teardown {
 
 switch ($Command) {
   'setup'    { Do-Setup }
+  'finish'   { Do-Finish }
   'status'   { Do-Status }
   'stop'     { Do-Stop }
   'start'    { Do-Start }
