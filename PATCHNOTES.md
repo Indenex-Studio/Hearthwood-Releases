@@ -10,6 +10,8 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 - Big hills everywhere and tall mountains in the highland. Steep slopes slow you down but never stop you.
 - Caves are cut into hillsides, with a stone floor and real darkness inside. Bring a torch.
 - A marsh near the start, with reeds, peat and gentle mud that slows you a little.
+- Grass reaches further out, following your view distance, and lies low around berry and hazel bushes so they stand out.
+- Fireflies no longer hover over the open sea.
 - Far painted mountains on the horizon, clearer far land in fair weather, painted water and clouds, and soft rain that leaves a low mist in the hollows.
 
 **Crafting**
@@ -54,6 +56,7 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 **Look and sound**
 - Pines grow needle clumps, giant pines look fuller, and thatch roofs are shaded.
 - The wool tunic is remade as a small crumpled T with a soft cord belt.
+- Tools are carried tilted, with a relaxed swing as you walk.
 - Gorse looks right again, with no floating spikes or yellow beads.
 - Your woven back basket shows on your back, and other players see it too.
 - Different music in each area and at dawn.
