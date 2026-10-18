@@ -10,18 +10,12 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 - Big hills everywhere and tall mountains in the highland. Steep slopes slow you down but never stop you.
 - Caves are cut into hillsides, with a stone floor and real darkness inside. Bring a torch.
 - A marsh near the start, with reeds, peat and gentle mud that slows you a little.
-- Grass reaches further out, following your view distance, and lies low around berry and hazel bushes so they stand out.
-- Fireflies no longer hover over the open sea.
 - Far painted mountains on the horizon, clearer far land in fair weather, painted water and clouds, and soft rain that leaves a low mist in the hollows.
-- The ground has new hand-painted textures, and clay looks like clay.
-- Rain thins away when you stand under a roof.
-- A cockle shell on the beach.
 
 **Crafting**
 - Burning-stick torch. Plant a lit one in the ground as a standing light.
 - Drying pots show how long is left and what helps while you wait. Under a roof, drying clay ignores the rain, and only its maker can pick it up in the open.
 - A small kiln for firing a few pieces at a time.
-- Thread, cloth and a tunic can be made from plants, no sheep needed.
 - Clay work has new hand motions, and you lift and look at a fired pot when you pick it up.
 
 **Survival**
@@ -35,7 +29,6 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 - Feed hens, rabbits and sheep by hand to tame them. Tame animals follow you, stay put when told, and take names.
 - The pen: a ring of fence that holds animals. Animal care rank 25 unlocks its gate.
 - A tame pair in a closed pen can have young.
-- Sheep can have young in a pen too.
 
 **Building**
 - Timber-framed cottage, a step up from clay, with working shutters.
@@ -43,7 +36,6 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 - A bracken bed in the lean-to, a taller lean-to, and building sites that tell you how to make what they need.
 - Hang a door from the right-click menu, and take down a finished build from it too.
 - A build's name note says who built it ("Bench, built by Mara").
-- Beds fit inside a home. A lean-to hints how warm it keeps you, and a panel lists the materials a whole build needs.
 
 **Sailing**
 - Log raft, and a plank boat with a reed sail. Wind matters, and a boat that is going fast looks it.
@@ -55,8 +47,6 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 - Share your home with a friend from the right-click menu on that person.
 - Right-click menus on doors, fires, hearths, baskets, chests, jars, kilns, lamps, troughs, drying clay, drying racks, snares, benches and rest spots. They replace the V, Shift+E and Z keys.
 - Sit and lie down are on the emote wheel now, so H is free.
-- The land window tells you how to let someone in by name, and the town and home-sharing words are plainer.
-- A gentle heads-up comes before your claim marker falls.
 - The key list (F1) shows every right-click menu.
 - At rank 50, Potter and Builder choose a focus to specialise in.
 - Kit and Capling join Pebble and Bramble. All four have smooth bodies, painted heads and more look choices.
@@ -64,8 +54,6 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 **Look and sound**
 - Pines grow needle clumps, giant pines look fuller, and thatch roofs are shaded.
 - The wool tunic is remade as a small crumpled T with a soft cord belt.
-- Tools are carried tilted, with a relaxed swing as you walk.
-- New hand motions for digging with a stick, chipping and scraping stone, and shaping clay with your head and shoulders.
 - Gorse looks right again, with no floating spikes or yellow beads.
 - Your woven back basket shows on your back, and other players see it too.
 - Different music in each area and at dawn.
@@ -78,15 +66,7 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 - Esc opens the menu again every time.
 - A boiled egg can be eaten. Trees fade only when they hide your body.
 - The game and server run lighter: grass detail levels, Medium graphics preset lighter than High.
-- Far trees are drawn simpler so the game runs smoother, with no change you can see.
 - The journal has an item book: linked boxes show what goes into what.
-- The item book shows how many of each ingredient you carry, and the journal shows the best quality you have reached.
-- The character creator opens full screen first when you start a new world.
-- Walking is smoother for other players, with fewer jumps.
-- A one-time tip shows that windows can be dragged by their top edge.
-- No more blue strip along the bottom edge near water. Baskets only send what is near you. A and D no longer walk you while you light a fire.
-- Low graphics drops the thick fog, and Medium shadows are lighter.
-- The wiki has a page on your first night.
 - Skills have their own page on K. Words across the game are plainer.
 
 ## 17 October
