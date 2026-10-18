@@ -45,6 +45,9 @@ if [ "$COUNT" = auto ]; then
   COUNT=$(( by_cpu < by_mem ? by_cpu : by_mem )); [ "$COUNT" -gt 20 ] && COUNT=20; [ "$COUNT" -ge 1 ] || COUNT=1
 fi
 
+# Fallback if dotnet still crashes: "setup-keepcaps" (or KEEP_CAPS=1) leaves the container capabilities as they are.
+DROP_CAPS="DropCapability=ALL"; [ "${KEEP_CAPS:-0}" = 1 ] && DROP_CAPS=""
+NO_NEW_PRIVS="NoNewPrivileges=true"; PLAIN=0
 say() { printf '\033[1m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[31mError:\033[0m %s\n' "$*" >&2; exit 1; }
 release_names() { local i; for i in $(seq $((COUNT - RELEASE + 1)) "$COUNT"); do [ "$i" -ge 1 ] && echo "$PREFIX$i"; done; }
@@ -185,6 +188,13 @@ EOF
 write_units() {
   say "Installing the services…"
   mkdir -p "$UNIT_DIR"
+  # Units left over from an earlier setup with more runners: stop and remove them so they do not start again.
+  local f old
+  for f in "$UNIT_DIR/$PREFIX"*.container; do
+    [ -e "$f" ] || continue
+    old="$(basename "$f" .container)"
+    names | grep -qx "$old" || { systemctl stop "$old.service" 2>/dev/null || true; rm -f "$f"; }
+  done
   cat >/etc/systemd/system/hw-ci.slice <<EOF
 [Unit]
 Description=Hearthwood CI runners (shared CPU and memory budget)
@@ -199,8 +209,9 @@ EOF
     first=$(( (i * CPUS) % CORES )); cores=""
     for c in $(seq 0 $((CPUS - 1))); do cores="${cores:+$cores,}$(( (first + c) % CORES ))"; done
     i=$((i + 1))
+    EXTRA_ARGS="--pids-limit=4096 --cpuset-cpus=$cores"; [ "$PLAIN" = 1 ] && EXTRA_ARGS=""
     cat >"$UNIT_DIR/$n.container" <<EOF
-# Hearthwood CI runner (made by hearthwood-big-box-runners.sh)
+# Hearthwood CI runner (made by ci-box.sh)
 [Unit]
 Description=Hearthwood CI runner $n
 Wants=network-online.target
@@ -211,11 +222,11 @@ Image=$IMAGE
 ContainerName=$n
 User=runner
 Volume=$STATE_DIR/$n:/state:z
-NoNewPrivileges=true
-DropCapability=ALL
+$NO_NEW_PRIVS
+$DROP_CAPS
 # dotnet crashed (signal 11, exit 139) in these containers; write-xor-execute is the suspected cause (turned off here).
 Environment=DOTNET_EnableWriteXorExecute=0
-PodmanArgs=--cpus=$CPUS --memory=$MEM --pids-limit=4096 --cpuset-cpus=$cores
+PodmanArgs=--cpus=$CPUS --memory=$MEM $EXTRA_ARGS
 
 [Service]
 Slice=hw-ci.slice
@@ -270,6 +281,12 @@ teardown() {
   say "Done. Runners named $PREFIX* that are still listed on https://github.com/organizations/$ORG/settings/actions/runners are offline; remove them there. Then delete this box in the provider console so it stops billing."
 }
 
+# Lowercase fallback (the console cannot type capitals): setup-keepcaps = setup without dropping container capabilities.
+if [ "${1:-}" = setup-keepcaps ]; then DROP_CAPS=""; set -- setup; fi
+# setup-plain: also no NoNewPrivileges, no pids limit, no core pinning. Only the CPU and memory caps stay. For finding out which restriction crashes dotnet.
+# setup-big: only 2 runners with 8 GB each (and capabilities kept), in case 4 small ones are the problem.
+if [ "${1:-}" = setup-big ]; then DROP_CAPS=""; COUNT=2; MEM=8g; RELEASE=1; set -- setup; fi
+if [ "${1:-}" = setup-plain ]; then DROP_CAPS=""; NO_NEW_PRIVS=""; PLAIN=1; set -- setup; fi
 case "${1:-setup}" in
   setup)    preflight; install_podman; build_image; register_all; write_units; start_all; sleep 20; status_all
             say "All set. Check: bash $0 status   ·   when done: bash $0 teardown, then delete the box." ;;
