@@ -16,6 +16,7 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 - The ground has new hand-painted textures, and clay looks like clay.
 - Rain thins away when you stand under a roof.
 - A cockle shell on the beach.
+- Deep woods have their own forest floor, and fords cross the water instead of running along it.
 
 **Crafting**
 - Burning-stick torch. Plant a lit one in the ground as a standing light.
@@ -29,6 +30,7 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 - A shared pot at the hearth: anyone in the owner's group can ladle a bowl.
 - A fire beside a lean-to keeps the cold off. The warning for cold says how long is left, and the warmth ring breathes when little warmth remains.
 - A fire waits for the person who lit it if they are offline.
+- A fire in the open waits for you while you are offline. A cold warning stays until you are warming up.
 
 **Animals**
 - Carry hens and rabbits whole and cut them up at a fire or table. Pick up live ones too.
@@ -53,6 +55,8 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 
 **Playing together**
 - Share your home with a friend from the right-click menu on that person.
+- You can also share your home from the Friends window.
+- The town keeps its own claims up from its store.
 - Right-click menus on doors, fires, hearths, baskets, chests, jars, kilns, lamps, troughs, drying clay, drying racks, snares, benches and rest spots. They replace the V, Shift+E and Z keys.
 - Sit and lie down are on the emote wheel now, so H is free.
 - The land window tells you how to let someone in by name, and the town and home-sharing words are plainer.
@@ -63,6 +67,8 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 
 **Look and sound**
 - Pines grow needle clumps, giant pines look fuller, and thatch roofs are shaded.
+- Rooms with a roof are darker and warmer near a fire.
+- New looks for roasted and burnt roots, and for the plank, paddle, mast and rolled reed sail.
 - The wool tunic is remade as a small crumpled T with a soft cord belt.
 - Tools are carried tilted, with a relaxed swing as you walk.
 - New hand motions for digging with a stick, chipping and scraping stone, and shaping clay with your head and shoulders.
@@ -76,6 +82,9 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 
 **Fixes**
 - Esc opens the menu again every time.
+- Small text, hotbar keys and crafting counts are easier to read at 1080p. Options has "Show tips again", and first hints wait until you are in the world.
+- New emote doodles for Laugh and Come here, and new sounds for kilns, turning pages, pick strikes, fireflies and taking a building down.
+- Words for build stages are plainer, and the creator says the race only changes looks.
 - A boiled egg can be eaten. Trees fade only when they hide your body.
 - The game and server run lighter: grass detail levels, Medium graphics preset lighter than High.
 - Far trees are drawn simpler so the game runs smoother, with no change you can see.
