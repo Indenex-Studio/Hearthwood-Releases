@@ -30,7 +30,8 @@ CPUS="${CPUS:-2}"
 MEM="${MEM:-4g}"
 IMAGE="localhost/hw-ci-runner:latest"
 HOST="$(hostname -s)"
-PREFIX="$HOST-b"
+PREFIX="${PREFIX:-$HOST-b}"          # runner names; another machine type (e.g. the Windows PC) sets its own
+EXTRA_LABEL="${EXTRA_LABEL:-}"          # one more label for these runners, e.g. friend
 STATE_DIR="/var/lib/hw-ci"
 UNIT_DIR="/etc/containers/systemd"
 BUILD_DIR="/var/cache/hw-ci-build"
@@ -48,9 +49,12 @@ fi
 # Fallback if dotnet still crashes: "setup-keepcaps" (or KEEP_CAPS=1) leaves the container capabilities as they are.
 DROP_CAPS="DropCapability=ALL"; [ "${KEEP_CAPS:-0}" = 1 ] && DROP_CAPS=""
 NO_NEW_PRIVS="NoNewPrivileges=true"; PLAIN=0
+# NO_AUTOSTART=1: the runner units do not start at boot by themselves (the Windows setup starts the wanted number).
+INSTALL_SECTION=$'[Install]\nWantedBy=multi-user.target'; [ "${NO_AUTOSTART:-0}" = 1 ] && INSTALL_SECTION=""
 say() { printf '\033[1m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[31mError:\033[0m %s\n' "$*" >&2; exit 1; }
 release_names() { local i; for i in $(seq $((COUNT - RELEASE + 1)) "$COUNT"); do [ "$i" -ge 1 ] && echo "$PREFIX$i"; done; }
+labels_for() { local l=hetzner; release_names | grep -qx "$1" && l="$l,release"; [ -n "$EXTRA_LABEL" ] && l="$l,$EXTRA_LABEL"; echo "$l"; }
 names() { local i; for i in $(seq 1 "$COUNT"); do echo "$PREFIX$i"; done; }
 need_root() { [ "$(id -u)" = 0 ] || die "run this as root (in the web console you already are)."; }
 
@@ -72,7 +76,8 @@ install_podman() {
   local v; v="$(podman version --format '{{.Client.Version}}')"
   [ "$(printf '%s\n4.4\n' "${v%%-*}" | sort -V | head -1)" = "4.4" ] || die "podman $v is too old (4.4+ needed)."
   # 8 GB swap so a runaway Godot export gets slow instead of killed.
-  if ! swapon --show | grep -q /swapfile; then
+  # (Not under WSL, where Windows manages swap through .wslconfig.)
+  if ! grep -qi microsoft /proc/version && ! swapon --show | grep -q /swapfile; then
     fallocate -l 8G /swapfile && chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile
     echo '/swapfile none swap sw 0 0' >> /etc/fstab
   fi
@@ -178,7 +183,7 @@ EOF
   export RUNNER_TOKEN="$REPLY_TOKEN"
   for n in "${need[@]}"; do
     say "Registering $n…"
-    RUNNER_NAME="$n" ORG="$ORG" GROUP="$GROUP" LABELS="$(release_names | grep -qx "$n" && echo hetzner,release || echo hetzner)" \
+    RUNNER_NAME="$n" ORG="$ORG" GROUP="$GROUP" LABELS="$(labels_for "$n")" \
       podman run --rm --user runner -v "$STATE_DIR/$n:/state:z" \
       -e RUNNER_TOKEN -e RUNNER_NAME -e ORG -e GROUP -e LABELS "$IMAGE" register
   done
@@ -234,8 +239,7 @@ Restart=always
 RestartSec=30
 TimeoutStartSec=600
 
-[Install]
-WantedBy=multi-user.target
+$INSTALL_SECTION
 EOF
   done
   systemctl daemon-reload
