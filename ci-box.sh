@@ -4,7 +4,7 @@
 #
 #   bash hearthwood-big-box-runners.sh setup      install, register and start the runners (asks for one token)
 #   bash hearthwood-big-box-runners.sh status     what each runner is doing
-#   bash hearthwood-big-box-runners.sh check      test a big download and a C# build inside a runner container
+#   bash hearthwood-big-box-runners.sh check      test a big download and a SpacetimeDB module build inside a runner container
 #   bash hearthwood-big-box-runners.sh stop       pause them (they stay registered)
 #   bash hearthwood-big-box-runners.sh start      resume them
 #   bash hearthwood-big-box-runners.sh teardown   stop and delete everything on this box (then delete the box)
@@ -309,12 +309,20 @@ DL='curl -fsSL --connect-timeout 20 --speed-limit 20000 --speed-time 30 --max-ti
 net_check_once() {
   in_runner "$DL -o /tmp/t.tgz https://github.com/clockworklabs/SpacetimeDB/releases/download/v2.12.0/spacetime-x86_64-unknown-linux-gnu.tar.gz && echo \"\$(( \$(stat -c %s /tmp/t.tgz) / 1048576 )) MB\""
 }
+# Builds a fresh SpacetimeDB C# module (the same "spacetime build" the game server uses; on one box only that
+# crashed, while other .NET builds were fine). Downloads .NET 8 and the SpacetimeDB CLI, a few minutes.
 dotnet_check() {
-  say "Checking that .NET can compile inside a runner container (downloads .NET 8 once, about 2 minutes)…"
-  in_runner "set -e; $DL -o /tmp/di.sh https://dot.net/v1/dotnet-install.sh; bash /tmp/di.sh --channel 8.0 --install-dir /tmp/dn >/dev/null
-    cd /tmp && /tmp/dn/dotnet new console -o h >/dev/null && cd h && /tmp/dn/dotnet build -c Release 2>&1 | tail -3
-    /tmp/dn/dotnet bin/Release/net8.0/h.dll" || die ".NET crashed or failed inside the runner container, so the runners were NOT started (they would only fail jobs). Send this output to Justin."
-  say ".NET check passed."
+  say "Checking that a SpacetimeDB module compiles inside a runner container (a few minutes)…"
+  in_runner "set -e; W=/tmp/hwcheck; mkdir -p \$W; cd \$W
+    $DL -o di.sh https://raw.githubusercontent.com/dotnet/install-scripts/main/src/dotnet-install.sh || $DL -o di.sh https://dot.net/v1/dotnet-install.sh
+    bash di.sh --channel 8.0 --install-dir \$W/dn >/dev/null
+    $DL https://github.com/clockworklabs/SpacetimeDB/releases/download/v2.12.0/spacetime-x86_64-unknown-linux-gnu.tar.gz | tar xz -C \$W
+    export DOTNET_ROOT=\$W/dn PATH=\$W/dn:\$W:\$PATH
+    spacetimedb-cli init --lang csharp --server-only --non-interactive --dotnet-version 8 --project-path \$W/m hwcheck >/dev/null
+    spacetimedb-cli build -p \$W/m/spacetimedb 2>&1 | tail -5
+    test -s \$W/m/spacetimedb/bin/Release/net8.0/wasi-wasm/AppBundle/StdbModule.wasm" \
+    || die "the test module did not compile inside the runner container (.NET crashed or failed), so the runners were NOT started (they would only fail jobs). Send this output to Justin."
+  say "Module build check passed."
 }
 # Checks a big download works inside the containers; if not, tries smaller packets before giving up.
 net_check() {
