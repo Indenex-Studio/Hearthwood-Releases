@@ -4,6 +4,7 @@
 #
 #   bash hearthwood-big-box-runners.sh setup      install, register and start the runners (asks for one token)
 #   bash hearthwood-big-box-runners.sh status     what each runner is doing
+#   bash hearthwood-big-box-runners.sh check      test a big download and a C# build inside a runner container
 #   bash hearthwood-big-box-runners.sh stop       pause them (they stay registered)
 #   bash hearthwood-big-box-runners.sh start      resume them
 #   bash hearthwood-big-box-runners.sh teardown   stop and delete everything on this box (then delete the box)
@@ -56,6 +57,13 @@ die() { printf '\033[31mError:\033[0m %s\n' "$*" >&2; exit 1; }
 release_names() { local i; for i in $(seq $((COUNT - RELEASE + 1)) "$COUNT"); do [ "$i" -ge 1 ] && echo "$PREFIX$i"; done; }
 labels_for() { local l=hetzner; release_names | grep -qx "$1" && l="$l,release"; [ -n "$EXTRA_LABEL" ] && l="$l,$EXTRA_LABEL"; echo "$l"; }
 names() { local i; for i in $(seq 1 "$COUNT"); do echo "$PREFIX$i"; done; }
+is_wsl() { grep -qi microsoft /proc/version; }
+NET="systemd-hw-ci"   # the podman network made from hw-ci.network
+# The MTU of the link to the internet (eth0 on WSL), for a container MTU that fits inside it.
+host_mtu() {
+  local dev; dev="$(ip -o route get 1.1.1.1 2>/dev/null | sed -n 's/.* dev \([^ ]*\).*/\1/p')"
+  cat "/sys/class/net/${dev:-eth0}/mtu" 2>/dev/null || echo 1500
+}
 need_root() { [ "$(id -u)" = 0 ] || die "run this as root (in the web console you already are)."; }
 
 preflight() {
@@ -72,7 +80,8 @@ install_podman() {
   say "Installing Podman…"
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -q
-  apt-get install -y -q podman curl jq ca-certificates
+  apt-get install -y -q podman curl jq ca-certificates iproute2
+  is_wsl && apt-get install -y -q ethtool
   local v; v="$(podman version --format '{{.Client.Version}}')"
   [ "$(printf '%s\n4.4\n' "${v%%-*}" | sort -V | head -1)" = "4.4" ] || die "podman $v is too old (4.4+ needed)."
   # 8 GB swap so a runaway Godot export gets slow instead of killed.
@@ -211,10 +220,39 @@ EOF
   # Own network for the runners with a smaller packet size. On WSL2 (and behind some VPNs and routers) the default
   # 1500 loses big downloads: small requests work, checkout works, then a large download (dotnet, cache, Godot)
   # hangs at near-zero CPU. Set MTU=1500 to turn this off. IPv6 is also off inside the containers (often no route).
+  local hm; hm="$(host_mtu)"
+  if [ -z "${MTU:-}" ]; then MTU=1400; [ "$hm" -lt 1460 ] && MTU=$(( hm - 60 )); fi
+  say "Container packet size (MTU) $MTU (internet link: $hm)."
+  # If the runners' network already exists with another MTU, remove it so it is made again with this one.
+  if podman network exists "$NET" 2>/dev/null; then
+    if [ "$(podman network inspect "$NET" --format '{{index .Options "mtu"}}' 2>/dev/null)" != "$MTU" ]; then
+      stop_all >/dev/null; podman network rm -f "$NET" >/dev/null || true
+    fi
+  fi
   cat >"$UNIT_DIR/hw-ci.network" <<EOF
 [Network]
-Options=mtu=${MTU:-1400}
+Options=mtu=$MTU
 EOF
+  # WSL2: the Windows virtual switch can drop large forwarded packets when the Linux side offloads segmenting or
+  # checksums, which stalls big downloads in containers while small requests and the VM's own downloads work.
+  # Turn those offloads off on the link at every boot.
+  if is_wsl; then
+    cat >/etc/systemd/system/hw-ci-offload.service <<'EOF'
+[Unit]
+Description=Hearthwood CI: no segment or checksum offload on the WSL link (big container downloads stall otherwise)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'for d in /sys/class/net/eth*; do ethtool -K "$(basename "$d")" tx off sg off tso off gso off gro off 2>/dev/null || true; done'
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl daemon-reload; systemctl enable --now hw-ci-offload.service >/dev/null 2>&1 || true
+  fi
   local n i=0 first c cores
   for n in $(names); do
     # Pin each runner to its own cores so two jobs never fight over the same ones.
@@ -239,6 +277,9 @@ $NO_NEW_PRIVS
 $DROP_CAPS
 # dotnet crashed (signal 11, exit 139) in these containers; write-xor-execute is the suspected cause (turned off here).
 Environment=DOTNET_EnableWriteXorExecute=0
+# Workstation GC: server GC sizes itself by every core on the machine, not this runner's 2, inside a 4 GB cap.
+Environment=DOTNET_gcServer=0
+Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
 PodmanArgs=--cpus=$CPUS --memory=$MEM --sysctl=net.ipv6.conf.all.disable_ipv6=1 $EXTRA_ARGS
 
 [Service]
@@ -251,6 +292,43 @@ $INSTALL_SECTION
 EOF
   done
   systemctl daemon-reload
+}
+
+# Runs a script in a throwaway container set up like a runner (same network, limits and restrictions).
+in_runner() {
+  local a=(--rm --network "$NET" --user runner --cpus="$CPUS" --memory="$MEM" --sysctl=net.ipv6.conf.all.disable_ipv6=1
+           -e DOTNET_EnableWriteXorExecute=0 -e DOTNET_gcServer=0 -e DOTNET_CLI_TELEMETRY_OPTOUT=1 -e DOTNET_NOLOGO=1)
+  [ -n "$DROP_CAPS" ] && a+=(--cap-drop=all)
+  [ -n "$NO_NEW_PRIVS" ] && a+=(--security-opt=no-new-privileges)
+  systemctl start hw-ci-network.service >/dev/null 2>&1 || true
+  podman run "${a[@]}" --entrypoint /bin/bash "$IMAGE" -c "$1"
+}
+# The two things CI jobs died on: a big download (the SpacetimeDB CLI; it stalled on WSL) and compiling C# (.NET crashed
+# with signal 11 on a big box). A download gives up below 20 KB/s for 30 s.
+DL='curl -fsSL --connect-timeout 20 --speed-limit 20000 --speed-time 30 --max-time 300'
+net_check_once() {
+  in_runner "$DL -o /tmp/t.tgz https://github.com/clockworklabs/SpacetimeDB/releases/download/v2.12.0/spacetime-x86_64-unknown-linux-gnu.tar.gz && echo \"\$(( \$(stat -c %s /tmp/t.tgz) / 1048576 )) MB\""
+}
+dotnet_check() {
+  say "Checking that .NET can compile inside a runner container (downloads .NET 8 once, about 2 minutes)…"
+  in_runner "set -e; $DL -o /tmp/di.sh https://dot.net/v1/dotnet-install.sh; bash /tmp/di.sh --channel 8.0 --install-dir /tmp/dn >/dev/null
+    cd /tmp && /tmp/dn/dotnet new console -o h >/dev/null && cd h && /tmp/dn/dotnet build -c Release 2>&1 | tail -3
+    /tmp/dn/dotnet bin/Release/net8.0/h.dll" || die ".NET crashed or failed inside the runner container, so the runners were NOT started (they would only fail jobs). Send this output to Justin."
+  say ".NET check passed."
+}
+# Checks a big download works inside the containers; if not, tries smaller packets before giving up.
+net_check() {
+  local got m
+  say "Checking a big download inside a runner container…"
+  if got="$(net_check_once)"; then say "Download check passed ($got)."; return 0; fi
+  [ -n "${MTU_FIXED:-}" ] && die "the download check failed with MTU $MTU. Send this output to Justin."
+  for m in 1280 1200; do
+    say "The download stalled. Trying a smaller packet size ($m)…"
+    stop_all >/dev/null; podman network rm -f "$NET" >/dev/null 2>&1 || true
+    sed -i "s/^Options=mtu=.*/Options=mtu=$m/" "$UNIT_DIR/hw-ci.network"; systemctl daemon-reload
+    if got="$(net_check_once)"; then MTU=$m; say "Download check passed with MTU $m ($got)."; return 0; fi
+  done
+  die "big downloads still stall inside the runner containers, so the runners were NOT started (they would only fail jobs). Send this output to Justin."
 }
 
 start_all() { local n; for n in $(names); do systemctl start "$n.service" || echo "   ($n didn't start)"; done; say "Runners started."; }
@@ -300,11 +378,12 @@ if [ "${1:-}" = setup-keepcaps ]; then DROP_CAPS=""; set -- setup; fi
 if [ "${1:-}" = setup-big ]; then DROP_CAPS=""; COUNT=2; MEM=8g; RELEASE=1; set -- setup; fi
 if [ "${1:-}" = setup-plain ]; then DROP_CAPS=""; NO_NEW_PRIVS=""; PLAIN=1; set -- setup; fi
 case "${1:-setup}" in
-  setup)    preflight; install_podman; build_image; register_all; write_units; start_all; sleep 20; status_all
+  setup)    preflight; install_podman; build_image; register_all; write_units; net_check; dotnet_check; start_all; sleep 20; status_all
             say "All set. Check: bash $0 status   ·   when done: bash $0 teardown, then delete the box." ;;
   status)   status_all ;;
+  check)    need_root; MTU_FIXED=1; MTU="$(sed -n 's/^Options=mtu=//p' "$UNIT_DIR/hw-ci.network" 2>/dev/null)"; net_check; dotnet_check ;;
   stop)     need_root; stop_all ;;
   start)    need_root; start_all ;;
   teardown) teardown ;;
-  *) die "unknown command '$1' (setup, status, stop, start, teardown)" ;;
+  *) die "unknown command '$1' (setup, status, check, stop, start, teardown)" ;;
 esac
