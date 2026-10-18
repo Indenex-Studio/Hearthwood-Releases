@@ -213,6 +213,8 @@ User=runner
 Volume=$STATE_DIR/$n:/state:z
 NoNewPrivileges=true
 DropCapability=ALL
+# dotnet crashed (signal 11, exit 139) in these containers; write-xor-execute is the suspected cause (turned off here).
+Environment=DOTNET_EnableWriteXorExecute=0
 PodmanArgs=--cpus=$CPUS --memory=$MEM --pids-limit=4096 --cpuset-cpus=$cores
 
 [Service]
