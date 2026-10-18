@@ -2,11 +2,11 @@
 # Hearthwood: many CI runners on ONE rented Ubuntu box (e.g. Hetzner CCX63 48 cores, or a DigitalOcean
 # CPU-Optimized droplet), set up and torn down by the hour. Run as root on a fresh Ubuntu 24.04 box.
 #
-#   bash ci-box.sh setup      install, register and start the runners (asks for one token)
-#   bash ci-box.sh status     what each runner is doing
-#   bash ci-box.sh stop       pause them (they stay registered)
-#   bash ci-box.sh start      resume them
-#   bash ci-box.sh teardown   stop and delete everything on this box (then delete the box)
+#   bash hearthwood-big-box-runners.sh setup      install, register and start the runners (asks for one token)
+#   bash hearthwood-big-box-runners.sh status     what each runner is doing
+#   bash hearthwood-big-box-runners.sh stop       pause them (they stay registered)
+#   bash hearthwood-big-box-runners.sh start      resume them
+#   bash hearthwood-big-box-runners.sh teardown   stop and delete everything on this box (then delete the box)
 #
 # What you get: COUNT runners (default: as many as the box can spare, up to 20) named <hostname>-b1..bN in runner group "hearthwood", label
 # "hetzner", so they take every normal CI job like the other Hetzner boxes. Each runner is its own Podman
@@ -14,7 +14,7 @@
 # one-per-machine lock) never collides between jobs. Containers run as the unprivileged user "runner",
 # with no extra privileges and no Docker/Podman socket. All of them together stay under TOTAL_CPU/TOTAL_MEM.
 #
-# Tuning: set before the command, e.g.  COUNT=12 bash ci-box.sh setup
+# Tuning: set before the command, e.g.  COUNT=12 bash hearthwood-big-box-runners.sh setup
 #   COUNT (runners), CPUS and MEM (per runner), TOTAL_CPU (e.g. 4400%), TOTAL_MEM (e.g. 140G)
 #
 # Cost: the box bills while it exists, even when stopped. After the backlog is clear, run teardown and
@@ -208,6 +208,13 @@ Description=Hearthwood CI runners (shared CPU and memory budget)
 CPUQuota=$TOTAL_CPU
 MemoryMax=$TOTAL_MEM
 EOF
+  # Own network for the runners with a smaller packet size. On WSL2 (and behind some VPNs and routers) the default
+  # 1500 loses big downloads: small requests work, checkout works, then a large download (dotnet, cache, Godot)
+  # hangs at near-zero CPU. Set MTU=1500 to turn this off. IPv6 is also off inside the containers (often no route).
+  cat >"$UNIT_DIR/hw-ci.network" <<EOF
+[Network]
+Options=mtu=${MTU:-1400}
+EOF
   local n i=0 first c cores
   for n in $(names); do
     # Pin each runner to its own cores so two jobs never fight over the same ones.
@@ -216,7 +223,7 @@ EOF
     i=$((i + 1))
     EXTRA_ARGS="--pids-limit=4096 --cpuset-cpus=$cores"; [ "$PLAIN" = 1 ] && EXTRA_ARGS=""
     cat >"$UNIT_DIR/$n.container" <<EOF
-# Hearthwood CI runner (made by ci-box.sh)
+# Hearthwood CI runner (made by hearthwood-big-box-runners.sh)
 [Unit]
 Description=Hearthwood CI runner $n
 Wants=network-online.target
@@ -226,12 +233,13 @@ After=network-online.target
 Image=$IMAGE
 ContainerName=$n
 User=runner
+Network=hw-ci.network
 Volume=$STATE_DIR/$n:/state:z
 $NO_NEW_PRIVS
 $DROP_CAPS
 # dotnet crashed (signal 11, exit 139) in these containers; write-xor-execute is the suspected cause (turned off here).
 Environment=DOTNET_EnableWriteXorExecute=0
-PodmanArgs=--cpus=$CPUS --memory=$MEM $EXTRA_ARGS
+PodmanArgs=--cpus=$CPUS --memory=$MEM --sysctl=net.ipv6.conf.all.disable_ipv6=1 $EXTRA_ARGS
 
 [Service]
 Slice=hw-ci.slice
@@ -277,7 +285,7 @@ teardown() {
     done
     unset RUNNER_TOKEN
   fi
-  for n in $(names); do rm -f "$UNIT_DIR/$n.container"; podman rm -f "$n" >/dev/null 2>&1 || true; done
+  for n in $(names); do rm -f "$UNIT_DIR/$n.container" "$UNIT_DIR/hw-ci.network"; podman rm -f "$n" >/dev/null 2>&1 || true; done
   rm -f /etc/systemd/system/hw-ci.slice
   systemctl daemon-reload
   rm -rf "$STATE_DIR" "$BUILD_DIR"
