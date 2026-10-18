@@ -201,6 +201,8 @@ EOF
 
 write_units() {
   say "Installing the services…"
+  # Running runners keep their old settings until restarted, so stop them; setup starts them again at the end.
+  stop_all >/dev/null
   mkdir -p "$UNIT_DIR"
   # Units left over from an earlier setup with more runners: stop and remove them so they do not start again.
   local f old
