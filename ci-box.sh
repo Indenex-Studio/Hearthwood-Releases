@@ -339,6 +339,33 @@ net_check() {
   die "big downloads still stall inside the runner containers, so the runners were NOT started (they would only fail jobs). Send this output to Justin."
 }
 
+# Finds out where the module build crashes: on the box itself, in a plain container, and in containers with fewer
+# restrictions. .NET and the CLI are downloaded once into /var/cache/hwcheck; each try works on a fresh copy.
+diagnose() {
+  need_root
+  local C=/var/cache/hwcheck
+  if [ ! -x "$C/dn/dotnet" ] || [ ! -x "$C/spacetimedb-cli" ]; then
+    say "Downloading .NET 8 and the SpacetimeDB CLI once…"
+    rm -rf "$C"; mkdir -p "$C"
+    $DL -o "$C/di.sh" https://raw.githubusercontent.com/dotnet/install-scripts/main/src/dotnet-install.sh
+    bash "$C/di.sh" --channel 8.0 --install-dir "$C/dn" >/dev/null
+    $DL https://github.com/clockworklabs/SpacetimeDB/releases/download/v2.12.0/spacetime-x86_64-unknown-linux-gnu.tar.gz | tar xz -C "$C"
+  fi
+  chmod -R a+rX "$C"
+  local T='set -e; W=$(mktemp -d); cp -a /hwc/dn /hwc/spacetimedb-cli /hwc/spacetimedb-standalone $W/; cd $W; export HOME=$W DOTNET_ROOT=$W/dn PATH=$W/dn:$W:$PATH DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
+    spacetimedb-cli init --lang csharp --server-only --non-interactive --dotnet-version 8 --project-path $W/m hwcheck >/dev/null
+    spacetimedb-cli build -p $W/m/spacetimedb >$W/b.log 2>&1 || { tail -3 $W/b.log; exit 1; }
+    test -s $W/m/spacetimedb/bin/Release/net8.0/wasi-wasm/AppBundle/StdbModule.wasm'
+  try() { local name="$1"; shift; if "$@" >/tmp/hwdiag.log 2>&1; then echo "  PASS  $name"; else echo "  FAIL  $name: $(grep -m1 -iE 'signal|error' /tmp/hwdiag.log | cut -c1-120)"; fi; }
+  say "Building a test module four ways (about a minute each)…"
+  ln -sfn "$C" /hwc
+  try "on the box itself"           bash -c "$T"
+  try "container, no limits"        podman run --rm -v "$C:/hwc:ro" --entrypoint /bin/bash "$IMAGE" -c "$T"
+  try "container, runner limits"    podman run --rm -v "$C:/hwc:ro" --user runner --cpus="$CPUS" --memory="$MEM" --entrypoint /bin/bash "$IMAGE" -c "$T"
+  try "container, no seccomp"       podman run --rm -v "$C:/hwc:ro" --user runner --cpus="$CPUS" --memory="$MEM" --security-opt seccomp=unconfined --entrypoint /bin/bash "$IMAGE" -c "$T"
+  say "Done. Send this output to Justin."
+}
+
 start_all() { local n; for n in $(names); do systemctl start "$n.service" || echo "   ($n didn't start)"; done; say "Runners started."; }
 stop_all()  { local n; for n in $(names); do systemctl stop "$n.service" 2>/dev/null || true; done; say "Runners stopped. Start again with: bash $0 start"; }
 
@@ -389,9 +416,10 @@ case "${1:-setup}" in
   setup)    preflight; install_podman; build_image; register_all; write_units; net_check; dotnet_check; start_all; sleep 20; status_all
             say "All set. Check: bash $0 status   ·   when done: bash $0 teardown, then delete the box." ;;
   status)   status_all ;;
+  diagnose) diagnose ;;
   check)    need_root; MTU_FIXED=1; MTU="$(sed -n 's/^Options=mtu=//p' "$UNIT_DIR/hw-ci.network" 2>/dev/null)"; net_check; dotnet_check ;;
   stop)     need_root; stop_all ;;
   start)    need_root; start_all ;;
   teardown) teardown ;;
-  *) die "unknown command '$1' (setup, status, check, stop, start, teardown)" ;;
+  *) die "unknown command '$1' (setup, status, check, diagnose, stop, start, teardown)" ;;
 esac
