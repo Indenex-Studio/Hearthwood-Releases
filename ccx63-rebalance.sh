@@ -30,8 +30,8 @@ HOST="$(hostname -s)"
 UNITS=/etc/containers/systemd
 
 # How many of each the box has now (from the runner units), so teardown removes all of them.
-OLD_BIG=$(ls "$UNITS/$HOST"-b*.container 2>/dev/null | wc -l)
-OLD_SMALL=$(ls "$UNITS/$HOST"-s*.container 2>/dev/null | wc -l)
+OLD_BIG=$( { find "$UNITS" -maxdepth 1 -name "$HOST-b*.container" 2>/dev/null || true; } | wc -l)
+OLD_SMALL=$( { find "$UNITS" -maxdepth 1 -name "$HOST-s*.container" 2>/dev/null || true; } | wc -l)
 echo "Now:   $OLD_BIG big + $OLD_SMALL small runners."
 echo "After: $BIG big (2 threads, 4 GB) + $SMALL small (1 thread, 2.5 GB) = $(( BIG * 2 + SMALL )) threads, $(( BIG * 4 + SMALL * 5 / 2 )) GB."
 [ $(( BIG * 2 + SMALL )) -le $(( $(nproc) - 4 )) ] || { echo "That needs more than the $(( $(nproc) - 4 )) threads this box spares; lower BIG or SMALL."; exit 1; }
@@ -56,6 +56,8 @@ if [ "$OLD_SMALL" -gt 0 ] || [ "$OLD_BIG" -gt 0 ]; then
   printf 'y\n\ny\n\n' | SMALL="$OLD_SMALL" STD="$OLD_BIG" bash "$SPLIT" teardown
 fi
 
+# Ubuntu's automatic updates can hold the package lock; setup fails if it runs then.
+while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || pgrep -f /usr/bin/unattended-upgrade >/dev/null; do echo "Waiting for Ubuntu updates to finish…"; sleep 10; done
 echo "Setting up $BIG big + $SMALL small…"
 HW_TOKEN="$t" SMALL="$SMALL" STD="$BIG" bash "$SPLIT" "$MODE"
 unset t
