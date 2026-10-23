@@ -2,6 +2,227 @@
 
 What changed, newest first, one section per day. Plain words, no build numbers. A day marked **WORLD WIPE** needs a fresh world; the launcher always asks before it wipes yours.
 
+## 23 October
+
+**Skills**
+- The Smith, Leatherwork and Weaver skills each have focuses to choose from.
+
+**Look and sound**
+- New clouds: soft, rounded heaps that drift with the wind and follow the weather, with thin high streaks above them.
+- At night the Milky Way turns overhead and the moon shows its real face. The sun reddens as it sets, and the day sky is a deeper blue.
+- New grass everywhere. The old tufts can still be switched on.
+- A new colour for the open sea.
+- Tree shadows and far trees no longer pop or blink as you move through the woods or fly over them.
+- Options has a Credits button.
+
+**Playing together**
+- Inspect another player to read a note with their five best skills.
+
+**Settings**
+- Full detail in Options, Graphics now reaches 256 m and 512 m, with longer test steps beyond. At the far steps the land you are looking toward is built first, so it loads faster and uses less memory.
+
+**Fixes**
+- Scraping a hide, drying meat, making a spindle and other station work no longer stop on their own while the station's window is open.
+- Build costs are easy to read on the dark windows, with missing materials shown in rust. Trade items show their pictures clearly, and the friends list headings stand apart from the names.
+- The keys and wear windows fit a 720p screen, and minigame hints are easier to read.
+- If the game cannot reach the world it says so plainly, and the death card stays up long enough to read.
+- A note can no longer be read through a hut wall, and watching or teaching someone stops at walls.
+
+## 22 October
+
+**Controls**
+- The mouse now turns the view without holding a button. Press V to get the cursor back, then right-click a person or thing for its menu. Prefer the old way? Switch Camera to classic on the Controls page. See [Keys and controls](controls.md).
+- The first tips teach V before right-clicking, and hints sit on a small paper note.
+
+**Fishing**
+- Make a fishing line from cord, a stick and a stone flake. Cast into ponds, streams or the sea, strike as the float dips, and reel bigger fish in. Worms and cut bait bring bites sooner.
+- Each fish bites by water, time of day and season, and comes in three colourings to collect. Out at sea, shoals of leaping fish drift along the coast, and a golden sunscale hides somewhere.
+- Every fish has a weight. The journal's Fish page keeps your biggest of each kind and a box for each colouring. A skilled angler lands rare colourings more often.
+- You hear the cast, the bite and the reel, and other players' fishing too.
+
+**Journal**
+- An Almanac: meet animals, fell foes, reach places and gather plants to fill its chapters and earn titles.
+- The journal leads on past the first week, toward your first trade and a town of your own.
+- When you log back in, a page tells you who used your stash, what your town did and who learned from you while you were away.
+- Deep recipes show in the Items book.
+
+**Skills**
+- Working beside someone far better at the same skill teaches you faster, and teachers earn a title for their pupils.
+- Raising a house's floors, walls and roof trains Builder.
+- The Skills page says what each skill opens next. Very fine work carries its maker's name.
+
+**Towns and building**
+- At a town board, post one of your building sites with a fee, and someone else can build it for you. Or take a job there, build it on their land, and the fee is yours when it stands.
+- Hover any build in the build menu to read what it takes.
+- The repair table's menu mends your tools.
+- A campfire holds more fuel before it needs feeding.
+
+**Sailing**
+- A helm wheel on the sailing boat, a sail to trim and an anchor to drop.
+- Crew take jobs by seat, and the sailing line says who has which.
+- The lookout seat names the nearest land and boat.
+- The owner chooses who may board.
+- Storm seas push a boat along or hold it back, and ships lean outward in a turn.
+- A wake behind moving boats and a splash at the paddle.
+- Out on open water you hear the sea, from a calm swell to a storm, and aboard a boat the hull slaps and spray hisses in rough water.
+
+**World**
+- Rivers are wide, deep and have water in them; before, they were dry mossy channels. Big rivers can be sailed.
+- Cave rooms hold loot, and each boss guards a hoard.
+
+**Characters and foes**
+- A new character picks where to wake on a painted map of the land.
+- New, smoother movement for dragons, turtles and mushroom folk: running, jumping, swimming, working, fighting and sneaking.
+- Goblins crouch, scurry and swing with real weight. The Watcher raises its long arm for a slow heavy swing, the Shade stalker creeps and rakes, and the gloom warden glides with its lantern swinging.
+
+**Settings and speed**
+- Windows look like torn crème parchment, and Options has a walnut-and-brass dark mode.
+- With Draw distance on Everything the game runs much lighter, and distant land keeps the near ground's colours.
+- Walking no longer stutters every few steps near lamps, and busy places with many players and animals feel smoother.
+
+**Fixes**
+- You can change your name once a minute. A name someone already has is refused without using up the wait.
+- A worked-out vein goes dark all at once.
+
+## 21 October
+
+**Characters**
+- Turtles have new bodies, with a build choice and blinking eyes. Dragons and mushroom folk blink and glance about.
+- Two new emotes: laugh and come here. Characters now hold out a hand to feed animals, sew leather, work the dye pot, knead dough, and carry a pot in both hands. Standing still, they shift their weight now and then.
+- Horses and donkeys move like animals, and a rider sits properly in the saddle.
+- Pale skin, cloth and scales keep their colour in bright midday sun.
+
+**Crafting and survival**
+- A clay cup, pinched, dried and fired, to drink from.
+- A warmer wool tunic.
+- Eating three different cooked foods close together slows your hunger for a while.
+
+**Fighting**
+- Weapon arts step and dip on every body.
+
+**Claims**
+- You are told how to keep your land, and told if it went back to the wild while you were away.
+- The land window says how big your claim is and what it protects, and a friend you let into your home sees what they may do there.
+- Trades hand over the exact tool you were shown, show how worn it is, and tell you what you got.
+- You can leave up to 100 of your own things on one patch of ground. Past that, pick some up or use a basket.
+
+**Sailing**
+- Boats ride the waves. Rough seas slow them and push them gently sideways.
+
+**Settings and speed**
+- Options, Graphics has a Draw distance slider (Near, 1 km, 2 km, 4 km, Everything). View distance is now called Full detail.
+- Longer, sharper shadows on High, shadows that look the same everywhere in the world, and character shadows that cost far less.
+- Lamps and fires in a distant town glow where they really are.
+
+## 20 October
+
+**Fighting**
+- Foes have new storybook models. Bone rattlers come in three kinds: armoured ones at the stone rings, barrow-grown ones in barrows, and lantern ghosts in the churchyard crypts.
+- Three new foes: webbed-grove spiders, shade stalkers that trail your torchlight, and the Watcher on the peaks, who freezes in light and only fights once hurt.
+- Goblin villages, war camps and churchyards are built places: palisades and stump huts, tents round a spit fire, a ruined chapel among leaning graves. Each is laid out differently, and their walls and fences are solid, so you go in through the gate. Goblin caves hold goblins, with their king in the deepest chamber.
+- Weapon arts: once you are skilled enough with a weapon, hold the strike to use its special move, and later press R for a second one. The weapon in hand shows the art charging and how long until it is ready again.
+- Armour softens every blow and arrow that lands on you, and the equipment panel says by how much. Copper and bronze armour can be made, and hide armour shows on every body.
+- A fight tells you when you step clear of a swing, when a shield catches a blow, and when you miss. Blows flash where they land, a foe's name shows over its head, and when you are struck down the card says who did it.
+- Blows thud or cut, shields clack, and missed swings whoosh past.
+- Your health bar is now 50 rather than 100, and refills at the same overall pace.
+- In fights between players, skill and the weapon in your hand decide how hard you hit, and bows work against players.
+- Gloom foes leave mist-dark fur, gems and rune stones.
+- After a death, you lose warmth more slowly for a short while.
+
+**Building**
+- Press H on your claim to build a house part by part: floors, walls, doors, windows, roofs and stairs. Climb the stairs to an upper floor; gable pieces close the roof ends.
+- Buildings level the ground under them, so you can build on gentle and moderate slopes.
+- Grow a lean-to into a hut, and a hut into a house, without tearing it down first. You can sleep in your lean-to on the first night.
+- Pick up a finished chest, bed, bench, table or shelf and set it down somewhere else.
+- Stone path pieces that join end to end, and berry bushes and root patches you can plant on your claim.
+- Your claim now lasts 14 days while you are away, and logging in keeps it standing. Your home in the wild no longer crumbles if you come back within two weeks.
+
+**Towns**
+- Build a town board on your claim to found a town. Small towns have no offices until they have six Members; until then the Mayor runs everything.
+- The Mayor can propose a project, a building on one of the town's squares. Members vote, and finished projects lift the town from Hamlet to Village to Town.
+- Officers and Members can be voted out by the town. A Mayor who stays away for a week loses the seat.
+- You can ask someone to live in your town as a Resident without giving up any of your land.
+- When a vote closes, the town log shows the count. Who voted for whom stays secret.
+
+**Animals**
+- Goats live in the world. Tame them by hand-feeding, breed them in a closed pen, and milk them.
+- A tame horse or donkey with no stable nearby slowly grows unhappy and in time leaves you. A stable keeps it content.
+- Sew a saddle bag and fit it on a tame donkey that follows you to carry more.
+- Cutting up a grown sheep or deer leaves a little bone and sinew, the start of needles, awls and thread.
+
+**Crafting**
+- Steel axe and pickaxe, a bronze axe, and iron ore, bars and an iron axe with proper models.
+- A leather tunic for hunters. Worn hide shows its material trait, such as Supple or Quiet.
+
+**Characters**
+- You can play as a turtle, in a tabard and kilt or a riverbank smock, and as a tall dragon, male or female.
+
+**World**
+- The open sea rolls with waves, from glassy calm to storm, with whitecaps and foam on the beach. Storms throw spray, and the edge of the world fades into sea mist.
+- Woods carry on to the horizon. Where water meets land there are rushes and wet, mossy stones. No two rocky patches or groves look alike.
+- The houses of distant towns show from the hills.
+
+**Sound**
+- A soft ping when someone talks to you, invites you or asks to trade, and a gentle nudge when hunger, thirst or cold run low. Pick sounds for mining, a crucible stir while smelting, drips after rain, and wind that swells with each gust.
+
+**Playing together**
+- Mute a player from their right-click menu to stop their chat, trade and invitation requests.
+
+**Fixes**
+- The camera no longer dips under hills or cliffs.
+- Monsters no longer walk into your claim or through your walls.
+- You can no longer work another player's claim without being added to it, and what's inside your chests and jars is hidden from passers-by.
+
+## 19 October
+
+> **WORLD WIPE.** A new world: a vast land of eroded mountains, rivers and footpaths up to mountain villages, with your first waking on a sheltered coast. Claims are now squares on a grid. The launcher asks first, and "Keep my world" is the safe choice if you are not ready.
+
+**World**
+- Mountains have rocky crags and cliffs, and trails have stone cairns and lookouts. Rivers sound like rivers, and you can hear rapids before you see them.
+- Goblin villages, skeleton rings, crypts and war camps stand across the land. Barrows and stone rings with cold hearths dot the high trails.
+- Distant land fades into soft haze, bluer the further you look, and in winter the far hills are snowy too.
+- Shooting stars on clear nights, and dust motes in woodland sunbeams.
+
+**Fighting**
+- Goblins, gloom creatures and bone rattlers fight back. Watch for the wind-up, step back to dodge, then strike them down. Bows chip at them from afar, though a goblin guard's shield stops most arrows.
+- Fighting with a spear, axe or knife trains its own skill.
+- Armour slots on the equipment panel, and three armour sets in every metal.
+
+**Towns and claims**
+- You can hold up to 6 claims, and a refused marker tells you why.
+- Towns place their own squares of land, and joining a town gives two of your squares to it.
+- The town board has plaques for members, elections, permissions, the stash, projects and the map.
+- Elections are a secret ballot, and you can drag names on your ballot to reorder them.
+
+**Characters**
+- A new race, the Colour-shift chameleon. Dragonlings blink, smile and look sleepy. Tails, ears, caps and hair swing as you move.
+- A cloak slot (hood up or down) and a head slot for the knitted wool cap.
+
+**Crafting and survival**
+- Dried meat from the drying rack, light to carry.
+- More stews, and hot dishes take a little chill off.
+- A drying shelf where clay dries faster, out of the rain.
+- Every chop at a tree gives a strip of fiber, and a felled tree gives three more.
+- Swimming in deep water tires you.
+- With a digging tool in hand, press G on your own land to flatten, raise, lower or smooth the ground.
+- A straw bed can go anywhere, but rots away unless it has a roof over it.
+
+**Animals**
+- Wild horses and donkeys to tame, a hitching rail to tie them, and a plank stable for your claim.
+
+**Controls**
+- A plain drag moves a whole stack. Hold Ctrl to take just one, or Shift to choose how many.
+- E uses the thing you are facing, even beside your claim marker or a boat.
+- New tools hang on your tools belt by themselves.
+
+**Look and sound**
+- Foes growl, hiss, clatter and moan. Weapons swing with their own sounds. Horses clop and donkeys bray.
+- Storage pots have a lid with a little knob, and goats look like goats.
+
+**Fixes**
+- No more shader errors on AMD graphics cards.
+- The sky no longer goes missing.
+
 ## 18 October
 
 > **WORLD WIPE.** The land is reshaped with mountains, big hills, caves and a new marsh, so this update needs a fresh world. The launcher asks first, and "Keep my world" is the safe choice if you are not ready.
