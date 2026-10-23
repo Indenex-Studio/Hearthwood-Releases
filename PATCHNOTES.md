@@ -4,6 +4,18 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 
 ## 23 October
 
+**Evening**
+- Real 3D clouds on Medium and High graphics: they drift, shade the ground and build into storms. Low keeps the lighter clouds. Options can switch either way.
+- Forests past 2 km are painted onto the land instead of drawn tree by tree, so the default view runs much faster, and distant trees on ridges no longer hover.
+- The sea runs smoothly to the horizon. Waves roll on all the open sea round the home continent, while inland lakes stay still. Storm spray is soft mist, ships throw spray when they slam into a wave, and wakes no longer echo far across the water.
+- On a boat, K, X, R and F work only the boat (who may board, anchor, sail in and out). They show on the F1 list and can be changed on the Controls page.
+- Pressing H to build a house shows a note with what each part costs, what you carry and how far along the house is.
+- Monsters far from any player keep their wounds until you come back.
+- Dying wears your worn gear a little.
+- Hotbar items show their pictures again, and the new-arrival badge beside the warmth ring is easy to see.
+- The dig hint names the reddish-brown clay.
+
+
 **Skills**
 - The Smith, Leatherwork and Weaver skills each have focuses to choose from.
 
