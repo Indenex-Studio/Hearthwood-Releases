@@ -4,6 +4,19 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 
 ## 24 October
 
+**Morning**
+- Building a house part by part (H) needs a sawing table on your claim, or on one of your town's claims. Build one from the build menu first. Houses already standing are untouched.
+- Inside a house built part by part, the roof and the floors above you fade away so you can see yourself, as in the huts.
+- The crypt's boss can drop the warden's cuirass, a rare piece of heavy armour no smith can copy.
+- Options has a Theme row: Light crème, Dark walnut, or the new Fern and moss.
+- Options, Graphics has a Vsync switch; Off lets the frame rate run past your screen's refresh rate.
+- On Medium and High the ground's colour, trails and wet patches reach much further out.
+- A couple of very gently shelving beaches now have a gully deep enough to launch a sailing boat.
+- You see the town name of a player near you again.
+- The sea's whitecaps and foam show again, and a calm sea no longer shows a criss-cross pattern out to the horizon.
+- Pale characters keep their colour in sunlight, and very long messages above the hotbar are shortened so they stay on screen.
+
+**Early hours**
 - The camera turns like an MMO camera: look straight up at the sky or down at your feet, zoom right in to just behind your eyes, and it slides in along the ground or a house wall instead of going through it. Invert mouse and the old camera are on the Controls page.
 - The bag window is now a character sheet: your own figure, live and in your gear, with Gear and Body tabs.
 - Notice boards post small jobs that pay copper coins, and your character sheet shows your purse. The first board stands in the starting clearing.
