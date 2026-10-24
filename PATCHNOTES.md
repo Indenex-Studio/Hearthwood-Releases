@@ -4,6 +4,14 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 
 ## 24 October
 
+**Midday**
+- Picking a theme in Options, under the new UI section, changes the windows at once, with no restart, and the hotbar and the character cards follow it too.
+- Falling snow is real flakes all round you, with a soft snowy haze in the distance.
+- Webbed groves sit in a cold pale mist, thicker at night.
+- Boat wakes look like broken foam rather than a solid white patch.
+- Draw distance limits how far the trees reach again. On High the single far trees stop at 2 km, as on Medium, with painted woods beyond.
+- From far off, a signal fire's smoke shows roughly where the fire is, not the exact spot.
+
 **Late morning**
 - Tab picks the nearest foe and steps outward, a painted ring marks your target, and small frames above the hotbar show your health and your target's in a fight. The ring is easy to see far off and on a foe in water, and the frame marks bosses and elites.
 - At the sawing table, cut boards into wall and floor panels: a panel goes up in one piece and costs a little less wood than building from loose boards.
