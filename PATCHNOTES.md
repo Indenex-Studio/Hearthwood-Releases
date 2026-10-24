@@ -4,6 +4,14 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 
 ## 24 October
 
+**Late morning**
+- Tab picks the nearest foe and steps outward, a painted ring marks your target, and small frames above the hotbar show your health and your target's in a fight. The ring is easy to see far off and on a foe in water, and the frame marks bosses and elites.
+- At the sawing table, cut boards into wall and floor panels: a panel goes up in one piece and costs a little less wood than building from loose boards.
+- A chopped tree falls and grows back as the same kind of tree, and the woods mix big and small trees.
+- Small waves roll in and break in foam along the beaches.
+- A sneak-attack hit on an animal shows a small amber "!" over it.
+- The Mending skill now rises slowly, at the same pace as fighting.
+
 **Morning**
 - Building a house part by part (H) needs a sawing table on your claim, or on one of your town's claims. Build one from the build menu first. Houses already standing are untouched.
 - Inside a house built part by part, the roof and the floors above you fade away so you can see yourself, as in the huts.
