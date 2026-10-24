@@ -2,7 +2,43 @@
 
 What changed, newest first, one section per day. Plain words, no build numbers. A day marked **WORLD WIPE** needs a fresh world; the launcher always asks before it wipes yours.
 
+## 24 October
+
+- The camera turns like an MMO camera: look straight up at the sky or down at your feet, zoom right in to just behind your eyes, and it slides in along the ground or a house wall instead of going through it. Invert mouse and the old camera are on the Controls page.
+- The bag window is now a character sheet: your own figure, live and in your gear, with Gear and Body tabs.
+- Notice boards post small jobs that pay copper coins, and your character sheet shows your purse. The first board stands in the starting clearing.
+- Every item and building says what it is when you hover over it, the trade window's items have tooltips too, and the build menu shows a building's name first.
+- Eating or drinking makes stamina refill twice as fast for about ten minutes.
+- A bronze pickaxe sits between the stone pick and steel.
+- Named goblins taunt you by private message and shout in chat when you're near their camp. Options can mute them.
+- A dead animal lying on someone's claim can only be butchered or carried off by the claim's owner and members.
+- Only a boat's owner and their claim members can use its hold, aboard or from the shore.
+- A building job taken at a town board teaches you a little more than building the same thing for yourself.
+- The Field Guide has an Items page, in the game's own words.
+
+**Look and sound**
+- A new tree renderer: fuller pines and broadleaves out to the horizon, with crowns carried high on bare trunks you can see between. The old trees are one setting away.
+- Grass carries on much further toward the horizon, and fields look fuller.
+- Storms at sea raise much bigger swells, and a storm sea looks rough and broken instead of glossy.
+- Medium graphics draws the clouds more cheaply, for a smoother frame rate; they look a touch lighter and softer.
+
 ## 23 October
+
+**Late evening**
+- The clay mixing trough is now the kneading trough.
+- A downed monster disappears after about a minute, and a new one takes its place.
+- To dig up roots, take your digging stick in hand (its number key).
+- A big boat frame that cannot launch into water says so instead of taking your materials.
+- In house build mode, the note tells you how many boards or sticks you still need, and when a house is nearly full.
+- Resting your view on something with a menu shows its name and "Right-click for more" again.
+- The Drink prompt shows at the water even when you are not thirsty.
+- You see a player's town and offices only when they are in your own town.
+- A claim member's hut on a town claim stays unless the claim's owner or the builder takes it down.
+- A dry roof tile or clay trough says "Pick up the roof tile" instead of "Pick up the jar".
+- Sunrise and sunset are no longer brighter than midday; the morning light builds gently as the sun climbs.
+- Boat wakes are a clear white foam trail behind the stern.
+- The sea no longer shows dark blotches near the coast, pale lines in the shallows or a crosshatch in the sun's sparkle.
+- At the farthest Full detail settings, ground that has loaded stays loaded when you turn round.
 
 **Evening**
 - Real 3D clouds on Medium and High graphics: they drift, shade the ground and build into storms. Low keeps the lighter clouds. Options can switch either way.
