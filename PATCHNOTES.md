@@ -2,7 +2,45 @@
 
 What changed, newest first, one section per day. Plain words, no build numbers. A day marked **WORLD WIPE** needs a fresh world; the launcher always asks before it wipes yours.
 
+## 25 October
+
+**Afternoon and evening**
+- Other players and animals press the grass flat as they walk through it, as you do, so busy ways show as trails.
+- Deep inside the groves the ground is an old mossy woods floor.
+- Players whose computers fall back to OpenGL now see the new forest instead of the old painted trees.
+- The far woods leave out trees that were felled, built over or dug away.
+
+**Early hours and morning**
+- Woods grow into larger, joined-up groves and big forests. Trees never sprout through your claim or your buildings.
+- Boulders and old landmarks (huge oaks, fallen giants, standing stones) are back where they were before the bigger forests.
+- Bigger trees give more logs before they fall. Pines give softwood and broadleaf trees give hardwood; both do anywhere a log is needed.
+- Adding materials to a building is a tap of Use (E), and each tap puts in a whole stack.
+- The weather moves with the sea wind, the same wind your sails feel, so clouds, leaves and grass lean the way boats are pushed.
+- Standing on a boat's deck no longer counts as wading, so you don't freeze on deck, and dying aboard wakes you free of the boat.
+- A restored ruin fades after about two weeks, and restoring one teaches your Builder skill a good deal.
+
 ## 24 October
+
+**Evening**
+- Now and then an old ruin turns up in the low country. Restore one into a walled, roofed shelter, and the town board lists the ruins that have turned up, with which way and about how far each lies.
+- Any build of ten or more stones needs a stone-breaking bench on the claim, or on one of your town's claims.
+- Rivers carry ripples, leaves and foam the way the river runs, downstream.
+- A felled tree goes at once and leaves a stump that matches its trunk, and there are no more invisible trunks standing in streams.
+- The new trees no longer come out near-black in the game's light.
+
+**Afternoon**
+- The forest is new: fuller, hand-painted pines and broadleaf trees in three shapes each, with great oaks and tall cedars in open glades. Trees stand further apart and vary more in height and width, so the woods are easier to walk through.
+- Broadleaf trees turn with the seasons and stand bare in winter, with a lighter shade under them; pines stay green. The trees shade the ground under their crowns.
+- Far-off trees sit on the hillsides instead of hovering above them, the far woods look as open as the near ones, the far land wears the near ground's look out to about 2 km, and the seasons carry smoothly from near trees to far ones.
+- The forest no longer stutters the first time you walk into the woods after an install or update, and it runs faster on Low graphics.
+- A big boat frame turns toward the water by itself while you place it, shows where the boat will slide in, and turns red with the reason when it cannot launch from there. It can stand a bit further from the water, and the sailing boat is now a painted wooden sailboat.
+- Land beyond your first claim square costs a small land tax, 40 copper a week for each extra square, paid by itself from your purse. Your first square stays free, and squares signed into a town are not charged. If the tax goes unpaid you are warned a week, three days and a day before the claim falls.
+- A building job's fee at the town board can be paid in coins as well as goods.
+- A stone-breaking bench can be built from the build menu.
+- Walking on a stone path is about a tenth quicker. A path snaps onto a footbridge's end, and paths run right along walls and fences.
+- You can set a building's outline down about 9 steps away instead of 6, and it follows your mouse out that far.
+- With a waterskin in your bag, scooping from a trough fills your pots instead of failing.
+- Cloud edges no longer look grainy or shimmer, and storm foam on the waves looks natural instead of lying in neat rows.
 
 **Midday**
 - Picking a theme in Options, under the new UI section, changes the windows at once, with no restart, and the hotbar and the character cards follow it too.
