@@ -8,6 +8,8 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 - In autumn leaves drop in whole clumps instead of flickering away, and in winter the near trees stand truly bare, with a soft haze of twigs only far off.
 - A clay trough left out in the open fills much faster in the rain, so a good downpour soon tops it up.
 - Options, Graphics has a Temporal smoothing (TAA) switch, off by default. On, tree edges and fading trees look steadier, a little soft on fast movement.
+- The Options page is split into tabs: Gameplay, Graphics, Sound, Controls and Windows. The theme and Reset layout are on the Windows tab.
+- On Medium and High the clouds stretch out along the wind, rain and storms close into low rolled decks with flat bases, and thin high cirrus drifts in long soft bands behind them.
 
 ## 25 October
 
