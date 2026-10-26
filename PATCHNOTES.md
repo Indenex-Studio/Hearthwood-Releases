@@ -2,13 +2,27 @@
 
 What changed, newest first, one section per day. Plain words, no build numbers. A day marked **WORLD WIPE** needs a fresh world; the launcher always asks before it wipes yours.
 
+## 26 October
+
+- Trees keep their leaves until they turn into the painted far woods, so a glade of great oaks and cedars no longer shows as a row of smooth leafless blobs in the middle distance.
+- In autumn leaves drop in whole clumps instead of flickering away, and in winter the near trees stand truly bare, with a soft haze of twigs only far off.
+- A clay trough left out in the open fills much faster in the rain, so a good downpour soon tops it up.
+- Options, Graphics has a Temporal smoothing (TAA) switch, off by default. On, tree edges and fading trees look steadier, a little soft on fast movement.
+
 ## 25 October
+
+**Late evening**
+- The grass is back to the older tufts, now running tall and short with the lie of the land, lower on steep slopes, and fraying into the ground in clumps at a field's edge.
+- Steep slopes and cliffs look like real rock, in bedded slabs and blocks, near and far.
+- Cloud shadows carry on past the near land and drift over the far hills, the far sea and the far woods.
+- The forest's trees and the grass sway with the same wind that moves the clouds and your sails.
 
 **Afternoon and evening**
 - Other players and animals press the grass flat as they walk through it, as you do, so busy ways show as trails.
 - Deep inside the groves the ground is an old mossy woods floor.
 - Players whose computers fall back to OpenGL now see the new forest instead of the old painted trees.
-- The far woods leave out trees that were felled, built over or dug away.
+- The far woods leave out trees that were felled, built over or dug away, and their colour matches the near trees.
+- With the camera zoomed right in, the name over your head fades away with your body.
 
 **Early hours and morning**
 - Woods grow into larger, joined-up groves and big forests. Trees never sprout through your claim or your buildings.
