@@ -5,6 +5,8 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 ## 26 October
 
 **Afternoon and evening**
+- The crafting window (C) is new: a list of what you can make on the left, sorted into kinds with a Find box, and the picked recipe on the right with what it takes, what you carry, the tool, what you still need and where to get it. Double-click, press Enter or click Make; hold Make to keep making more. Station windows work the same way.
+- The first-pot tips say how long drying and firing take, and that a pot still damp will crack in the fire.
 - E uses the thing under the crosshair: the middle of the screen while you look with the mouse, or under the cursor when it is free. That thing glows with a warm outline and shows its name, so you see what E will hit before you press it.
 - The character sheet's Gear tab is new: an Equipment card with your worn slots, and a Bag card with a Find box, kind filters, a carrying bar and your purse. Protection and Warmth are in words; hover them for the exact figure. Click a worn slot to see what's on it and what could go there.
 - The Skills page (K) is new: skills grouped under Making, Gathering, Getting about and Fighting on the left, your total against the cap at the top, and the picked skill on the right with its rank, title, what it opens next, and the switches to lower or hold it and to choose a focus.
