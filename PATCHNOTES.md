@@ -4,6 +4,20 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 
 ## 26 October
 
+**Afternoon and evening**
+- E uses the thing under the crosshair: the middle of the screen while you look with the mouse, or under the cursor when it is free. That thing glows with a warm outline and shows its name, so you see what E will hit before you press it.
+- The character sheet's Gear tab is new: an Equipment card with your worn slots, and a Bag card with a Find box, kind filters, a carrying bar and your purse. Protection and Warmth are in words; hover them for the exact figure. Click a worn slot to see what's on it and what could go there.
+- The Skills page (K) is new: skills grouped under Making, Gathering, Getting about and Fighting on the left, your total against the cap at the top, and the picked skill on the right with its rank, title, what it opens next, and the switches to lower or hold it and to choose a focus.
+- The Town window is new: the town's name and size at the top, tabs for each page, a column with the Mayor or the open election and the latest log, and votes and builds as cards on the Projects tab.
+- A small reading at the top right shows the air temperature where you stand, in Fahrenheit or Celsius as you pick under Options, Gameplay. Higher ground is colder, marsh cooler and the coast milder. For now it is only a reading.
+- Every boat is now faster than running. Rafts and dugouts are much quicker, and sail boats are far faster, with the wind pushing them harder; a becalmed sail boat still paddles along quicker than you can run.
+- The big boat's sail shows from both sides.
+- A lamp set down inside a house stands on the floor or stair you put it on, instead of on the ground under the house.
+- A brick fresh from the mold goes into your bag as a wet brick; set it down to dry.
+- Woods climb further up the far hills, with fewer bare heath patches in the lowland woods, and no trees grow on sheer rock faces.
+- In a storm the sea's swell keeps a steady heading, and its foam no longer shows a faint grid.
+
+**Early hours and morning**
 - Trees keep their leaves until they turn into the painted far woods, so a glade of great oaks and cedars no longer shows as a row of smooth leafless blobs in the middle distance.
 - In autumn leaves drop in whole clumps instead of flickering away, and in winter the near trees stand truly bare, with a soft haze of twigs only far off.
 - A clay trough left out in the open fills much faster in the rain, so a good downpour soon tops it up.
