@@ -4,6 +4,14 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 
 ## 27 October
 
+- Fog on High and Medium graphics: mist gathers on ponds, streams and hollows at night and dawn and thins by day, sun shafts break through gaps in the cloud, and far hills and woods fade into the haze. Low looks as before.
+- Trees and grass stand nearly still in a calm and sway harder as the wind rises.
+- Cliff faces are stepped ledges of layered rock, with moss on some of the ledges.
+- A pick now breaks stone from big boulders and bare cliff faces as well as ore veins.
+- You choose and make your characters around a campfire at night.
+- The Watcher has a new look: a pale robe with long torn sleeves that hang along its arms.
+- A named foe you badly hurt can slip away when its camp is broken. It comes back later with the same name, remembers you and taunts you.
+- Foe camps left alone grow, and in time found new camps nearby.
 - Fighting runs on a steady one-second beat. With a foe as your target, in reach and in front of you, you strike it once a beat on your own; weapon arts sit on keys 1 to 6 and take the next beat when you press one.
 - Under every churchyard a stair now leads down into a sunken crypt: three halls of lantern rattlers and the crypt warden at the end.
 
