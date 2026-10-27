@@ -2,6 +2,11 @@
 
 What changed, newest first, one section per day. Plain words, no build numbers. A day marked **WORLD WIPE** needs a fresh world; the launcher always asks before it wipes yours.
 
+## 27 October
+
+- Fighting runs on a steady one-second beat. With a foe as your target, in reach and in front of you, you strike it once a beat on your own; weapon arts sit on keys 1 to 6 and take the next beat when you press one.
+- Under every churchyard a stair now leads down into a sunken crypt: three halls of lantern rattlers and the crypt warden at the end.
+
 ## 26 October
 
 **Afternoon and evening**
