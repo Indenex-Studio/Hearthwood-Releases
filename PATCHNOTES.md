@@ -5,6 +5,8 @@ What changed, newest first, one section per day. Plain words, no build numbers. 
 ## 26 October
 
 **Afternoon and evening**
+- Trees no longer grow on ground steep enough to show as rock, so cliffs and steep slopes stand clear of trunks.
+- A new player's crafting window opens on Fire and food, where the first things to make are.
 - The crafting window (C) is new: a list of what you can make on the left, sorted into kinds with a Find box, and the picked recipe on the right with what it takes, what you carry, the tool, what you still need and where to get it. Double-click, press Enter or click Make; hold Make to keep making more. Station windows work the same way.
 - The first-pot tips say how long drying and firing take, and that a pot still damp will crack in the fire.
 - E uses the thing under the crosshair: the middle of the screen while you look with the mouse, or under the cursor when it is free. That thing glows with a warm outline and shows its name, so you see what E will hit before you press it.
