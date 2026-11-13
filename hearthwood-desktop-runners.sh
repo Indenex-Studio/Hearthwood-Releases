@@ -4,7 +4,8 @@
 #
 #   bash hearthwood-desktop-runners.sh            set everything up (asks for one GitHub token)
 #   bash hearthwood-desktop-runners.sh status     what each runner is doing
-#   bash hearthwood-desktop-runners.sh stop       pause them (gaming night); they stay registered
+#   bash hearthwood-desktop-runners.sh stop       pause them (gaming night); they stay registered. Stops every Hearthwood
+#                                                 runner here: these, older ones, and the native actions.runner services
 #                                                 STOP THEM BEFORE PLAYING: with the runners busy, the game server
 #                                                 on this machine slows down and the game rubberbands.
 #   bash hearthwood-desktop-runners.sh start      resume them
@@ -352,8 +353,46 @@ fix_render() {
 
 unit() { echo "$1.service"; }
 
-start_all()  { local n; for n in $(names); do systemctl --user start "$(unit "$n")" || echo "   ($n didn't start; the render runner needs you logged in to the desktop)"; done; say "Runners started."; }
-stop_all()   { local n; for n in $(names); do systemctl --user stop "$(unit "$n")" 2>/dev/null || true; done; say "Runners stopped. Start again with: bash $0 start"; }
+# integration-259 (Justin 2026-11-13 00:22: "I can't disable my runners"): stop and start reach every Hearthwood runner on this
+# machine, not only the COUNT this run would make: every hearthwood-d*/render user service (from any earlier COUNT), the native
+# runner services actions.runner.Indenex-Studio.* (system services; pm/desktop-runners-isolate.sh apply lets you switch them
+# with no password), and the runner watchdog's timer, which would otherwise start a stopped native runner again.
+NATIVE_GLOB="${NATIVE_GLOB:-actions.runner.Indenex-Studio.*.service}"
+user_units() {
+  { systemctl --user list-unit-files --no-legend --plain "$PREFIX*.service" "$RENDER*.service" 2>/dev/null
+    systemctl --user list-units --all --no-legend --plain "$PREFIX*.service" "$RENDER*.service" 2>/dev/null
+  } | awk '{print $1}' | grep -E '\.service$' | sort -u
+  names | sed 's/$/.service/'
+}
+native_units() {
+  { systemctl list-unit-files --no-legend --plain "$NATIVE_GLOB" 2>/dev/null
+    systemctl list-units --all --no-legend --plain "$NATIVE_GLOB" 2>/dev/null
+  } | awk '{print $1}' | grep -E '\.service$' | sort -u
+}
+watchdog_timer() { systemctl list-unit-files --no-legend --plain 'hw-watchdog.timer' 2>/dev/null | awk '{print $1}' | head -n 1; }
+# A system service: with no password (the isolate script's rule), else through sudo, which asks once.
+sys() {
+  systemctl --no-ask-password "$@" 2> /dev/null && return 0
+  if [ -t 0 ]; then sudo systemctl "$@"; else echo "   (couldn't $1 ${*:2}: run this script in a terminal, or sudo bash pm/desktop-runners-isolate.sh apply once)"; return 1; fi
+}
+
+start_all()  {
+  local u
+  for u in $(user_units | sort -u); do systemctl --user start "$u" || echo "   (${u%.service} didn't start; the render runner needs you logged in to the desktop)"; done
+  for u in $(native_units); do sys start "$u" || true; done
+  u="$(watchdog_timer)"; [ -z "$u" ] || sys start "$u" || true
+  say "Runners started."
+}
+stop_all()   {
+  local u
+  # The watchdog first, so it can't start a runner again while the others stop.
+  u="$(watchdog_timer)"; [ -z "$u" ] || sys stop "$u" || true
+  for u in $(user_units | sort -u); do systemctl --user stop "$u" 2>/dev/null || true; done
+  for u in $(native_units); do sys stop "$u" || true; done
+  local left; left="$( { for u in $(user_units | sort -u); do systemctl --user is-active --quiet "$u" && echo "$u"; done
+                         for u in $(native_units); do systemctl is-active --quiet "$u" && echo "$u"; done; } || true)"
+  if [ -n "$left" ]; then say "Still running: $(echo $left)"; else say "All runners stopped. Start again with: bash $0 start"; fi
+}
 
 status_all() {
   local n st
@@ -363,6 +402,9 @@ status_all() {
     if [ "$st" = active ]; then
       podman logs --tail 50 "$n" 2>/dev/null | grep -E 'Running job|completed with result|Listening for Jobs' | tail -1 || echo
     else echo; fi
+  done
+  for n in $(native_units); do
+    printf '%-22s native:  %s\n' "$(echo "$n" | sed 's/^actions\.runner\.Indenex-Studio\.//; s/\.service$//')" "$(systemctl is-active "$n" 2>/dev/null || true)"
   done
   echo "On GitHub: https://github.com/organizations/$ORG/settings/actions/runners"
 }
