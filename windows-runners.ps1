@@ -446,6 +446,8 @@ function Do-Shrink {
   Wait-Boot
   Apply-Linux ([int]$s.max) 0 ([int]$s.cores) ([int]$s.memGB)
   Run-Linux '/usr/local/bin/hwbox trim'
+  Run-Linux 'rm -f /var/lib/hw-ci/disk-*.gb'   # the sizes measured before the shrink are gone with the containers
+  $sparse = $false
   # Keep the watchdogs from starting it again while the disk is worked on.
   Disable-ScheduledTask -TaskName $WinTask -ErrorAction SilentlyContinue | Out-Null
   Disable-ScheduledTask -TaskName $Task -ErrorAction SilentlyContinue | Out-Null
@@ -453,7 +455,10 @@ function Do-Shrink {
   try {
     & wsl.exe --shutdown
     Start-Sleep -Seconds 5
-    [void](Set-Sparse)
+    $sparse = Set-Sparse
+    # Windows cannot compact a sparse disk (diskpart refuses it, seen on the friend's PC 2026-11-21); a sparse one shrinks
+    # when Linux trims it instead, which happens below once it is running again.
+    if (-not $sparse) {
     Say 'Compacting the Linux disk (can take several minutes on a big disk)...'
     $dp = Join-Path $Dir 'compact.txt'
     Set-Content -Path $dp -Encoding ASCII -Value @("select vdisk file=`"$Vhdx`"", 'attach vdisk readonly', 'compact vdisk', 'detach vdisk')
@@ -466,11 +471,16 @@ function Do-Shrink {
       & diskpart.exe /s $dp *> $null
       Remove-Item $dp -Force -ErrorAction SilentlyContinue
     }
+    }
   } finally {
     Enable-ScheduledTask -TaskName $WinTask -ErrorAction SilentlyContinue | Out-Null
     Ensure-KeepAlive
     Wait-Boot
     Apply-Linux ([int]$s.max) ([int]$s.want) ([int]$s.cores) ([int]$s.memGB)
+  }
+  if ($sparse) {
+    Say 'Giving the freed space back to Windows (a trim of the sparse disk)...'
+    Run-Linux 'fstrim -av'
   }
   $after = GB-Of $Vhdx
   Say "The Linux disk went from $before GB to $after GB on C:. The runners are running again."
