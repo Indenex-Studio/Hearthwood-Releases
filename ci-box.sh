@@ -8,6 +8,13 @@
 #   bash hearthwood-big-box-runners.sh stop       pause them (they stay registered)
 #   bash hearthwood-big-box-runners.sh start      resume them
 #   bash hearthwood-big-box-runners.sh teardown   stop and delete everything on this box (then delete the box)
+#   bash hearthwood-big-box-runners.sh watchdog-install   add the watchdog to a box that is already set up (setup does it itself;
+#                                                  also fine on boxes whose runners came from hetzner-runner.sh)
+#   bash hearthwood-big-box-runners.sh watchdog-log       what the watchdog restarted, and when it runs next
+#   bash hearthwood-big-box-runners.sh trim               remove unused images and trim the disk (Windows "shrink" uses it)
+#
+# Disk: the watchdog restarts an idle runner whose container has grown past DISK_CAP_GB (default 20, set in /etc/hw-runner.env;
+# 0 turns it off), which gives it a clean container, so runners never pile up weeks of checkouts, caches and builds.
 #
 # What you get: COUNT runners (default: as many as the box can spare, up to 20) named <hostname>-b1..bN in runner group "hearthwood", label
 # "hetzner", so they take every normal CI job like the other Hetzner boxes. Each runner is its own Podman
@@ -33,6 +40,8 @@ IMAGE="localhost/hw-ci-runner:latest"
 HOST="$(hostname -s)"
 PREFIX="${PREFIX:-$HOST-b}"          # runner names; another machine type (e.g. the Windows PC) sets its own
 EXTRA_LABEL="${EXTRA_LABEL:-}"          # one more label for these runners, e.g. friend
+BASE_LABEL="${BASE_LABEL:-hetzner}"     # the label that takes normal CI jobs; a fast lane sets "release" instead, so it never takes PR checks
+CORE_OFFSET="${CORE_OFFSET:-0}"         # first core to pin to, so a second runner class on the same box (ccx63-split.sh) uses other cores
 STATE_DIR="/var/lib/hw-ci"
 UNIT_DIR="/etc/containers/systemd"
 BUILD_DIR="/var/cache/hw-ci-build"
@@ -55,7 +64,8 @@ INSTALL_SECTION=$'[Install]\nWantedBy=multi-user.target'; [ "${NO_AUTOSTART:-0}"
 say() { printf '\033[1m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[31mError:\033[0m %s\n' "$*" >&2; exit 1; }
 release_names() { local i; for i in $(seq $((COUNT - RELEASE + 1)) "$COUNT"); do [ "$i" -ge 1 ] && echo "$PREFIX$i"; done; }
-labels_for() { local l=hetzner; release_names | grep -qx "$1" && l="$l,release"; [ -n "$EXTRA_LABEL" ] && l="$l,$EXTRA_LABEL"; echo "$l"; }
+# integration-235: a runner with 8 GB or more also gets "mem8", which the release's Publish job asks for (PUBLISH_RUNNER).
+labels_for() { local l="$BASE_LABEL"; release_names | grep -qx "$1" && l="$l,release"; [ -n "$EXTRA_LABEL" ] && l="$l,$EXTRA_LABEL"; [ "${MEM%[gG]}" -ge 8 ] 2> /dev/null && l="$l,mem8"; echo "$l"; }
 names() { local i; for i in $(seq 1 "$COUNT"); do echo "$PREFIX$i"; done; }
 is_wsl() { grep -qi microsoft /proc/version; }
 NET="systemd-hw-ci"   # the podman network made from hw-ci.network
@@ -180,7 +190,7 @@ register_all() {
     registered "$n" || need+=("$n")
   done
   if [ "${#need[@]}" -eq 0 ]; then say "All runners are already registered."; return; fi
-  cat <<EOF
+  [ -n "${HW_TOKEN:-}" ] || cat <<EOF
 
 Now one thing from you:
   1. Open https://github.com/organizations/$ORG/settings/actions/runners/new
@@ -188,7 +198,7 @@ Now one thing from you:
   3. Paste it here and press Enter (it won't be shown)
 
 EOF
-  ask_token "Token: "
+  if [ -n "${HW_TOKEN:-}" ]; then REPLY_TOKEN="$HW_TOKEN"; else ask_token "Token: "; fi
   export RUNNER_TOKEN="$REPLY_TOKEN"
   for n in "${need[@]}"; do
     say "Registering $n…"
@@ -258,7 +268,7 @@ EOF
   local n i=0 first c cores
   for n in $(names); do
     # Pin each runner to its own cores so two jobs never fight over the same ones.
-    first=$(( (i * CPUS) % CORES )); cores=""
+    first=$(( (CORE_OFFSET + i * CPUS) % CORES )); cores=""
     for c in $(seq 0 $((CPUS - 1))); do cores="${cores:+$cores,}$(( (first + c) % CORES ))"; done
     i=$((i + 1))
     EXTRA_ARGS="--pids-limit=4096 --cpuset-cpus=$cores"; [ "$PLAIN" = 1 ] && EXTRA_ARGS=""
@@ -368,8 +378,187 @@ diagnose() {
   say "Done. Send this output to Justin."
 }
 
-start_all() { local n; for n in $(names); do systemctl start "$n.service" || echo "   ($n didn't start)"; done; say "Runners started."; }
-stop_all()  { local n; for n in $(names); do systemctl stop "$n.service" 2>/dev/null || true; done; say "Runners stopped. Start again with: bash $0 start"; }
+# The watchdog: every 2 minutes it restarts a runner that sits "Idle" with a dead connection (after sleep or a network
+# blip) and never touches one that is running a job. Works for these runners and for plain actions.runner.* services.
+install_watchdog() {
+  need_root
+  say "Installing the runner watchdog…"
+  apt-get install -y -q curl >/dev/null 2>&1 || true
+  mkdir -p "$STATE_DIR"
+  cat >/usr/local/bin/hw-watchdog <<'HWWD_EOF'
+#!/bin/bash
+# Hearthwood runner watchdog (run by hw-watchdog.timer every 2 minutes).
+#
+# A runner can look registered and "Idle" on GitHub while its connection is dead (the machine slept, WSL was
+# paused, the network blipped), so queued jobs never reach it. This restarts such a runner. It only uses
+# things on this machine, so it needs no GitHub token. It restarts a runner only when ALL of these hold:
+#   - it is not running a job (no Runner.Worker process), so a job is never killed;
+#   - its listener process is gone, or this machine just woke up / got its network back, or the runner has
+#     been completely silent (no log line) for STALE_MIN minutes;
+#   - it was not restarted in the last 10 minutes.
+# Every action is logged to /var/log/hw-watchdog.log. Works for the Podman runners made by ci-box.sh and for
+# plain "actions.runner.*" services (hetzner-runner.sh, ./svc.sh install).
+UNIT_DIR=${HW_UNIT_DIR:-/etc/containers/systemd}
+STATE=${HW_STATE:-/var/lib/hw-ci}
+LOG=${HW_LOG:-/var/log/hw-watchdog.log}
+ENVFILE=${HW_ENV:-/etc/hw-runner.env}
+CGROOT=${HW_CGROOT:-/sys/fs/cgroup/system.slice}
+PROCROOT=${HW_PROC:-/proc}
+INTERVAL=120
+STALE_MIN=${STALE_MIN:-45}
+MIN_GAP=600
+NETURL=${HW_NETURL:-https://github.com/}
+
+mkdir -p "$STATE"
+exec 9>"$STATE/watchdog.lock"; flock -n 9 || exit 0
+now=$(date +%s)
+log() { echo "$(date '+%F %T') $*" >> "$LOG"; }
+[ -f "$LOG" ] && [ "$(stat -c %s "$LOG")" -gt 1048576 ] && tail -n 500 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"
+[ -e "$STATE/stopped" ] && exit 0   # "ci-box.sh stop": the runners were stopped on purpose
+
+# Did this machine just wake up? (The clock jumps, or the Windows side left a note.)
+last=$(cat "$STATE/watchdog.tick" 2>/dev/null || echo "$now"); echo "$now" > "$STATE/watchdog.tick"
+if [ $(( now - last )) -gt $(( INTERVAL * 5 / 2 )) ]; then
+  log "clock jumped $(( now - last )) s: the machine was asleep or paused"; touch "$STATE/watchdog.refresh"
+fi
+
+# Without a network a restart helps nobody: wait, and refresh the runners once it is back.
+if ! curl -s -o /dev/null -m 15 "$NETURL"; then
+  [ -e "$STATE/watchdog.neterr" ] || log "no network (could not reach $NETURL); waiting"
+  touch "$STATE/watchdog.neterr" "$STATE/watchdog.refresh"; exit 0
+fi
+[ -e "$STATE/watchdog.neterr" ] && { log "network is back"; rm -f "$STATE/watchdog.neterr"; }
+refresh=0
+if [ -e "$STATE/watchdog.refresh" ]; then
+  refresh=1; hwclock -s 2>/dev/null || true   # WSL clocks drift while Windows sleeps, and GitHub refuses a skewed clock
+fi
+
+# The runner services: Podman units made by ci-box.sh, then plain actions.runner.* services.
+units=(); declare -A podman_unit
+if [ -d "$UNIT_DIR" ]; then
+  while read -r f; do [ -n "$f" ] && units+=("$(basename "$f" .container).service") && podman_unit[$(basename "$f" .container).service]=1; done < <(ls "$UNIT_DIR"/*.container 2>/dev/null | sort -V)
+fi
+# WANT in /etc/hw-runner.env (the Windows setup): only the first WANT Podman runners are meant to run.
+if [ -f "$ENVFILE" ] && [ ${#units[@]} -gt 0 ]; then
+  want=$(sed -n 's/^WANT=//p' "$ENVFILE" | tail -1)
+  [ -n "$want" ] && units=("${units[@]:0:$want}")
+fi
+while read -r u; do [ -n "$u" ] && units+=("$u"); done < <(systemctl list-units --all --plain --no-legend 'actions.runner.*.service' 2>/dev/null | awk '{print $1}')
+
+# The command lines of every process in a unit's cgroup (including the container's, nested below it).
+unit_cmds() {
+  local cg="$CGROOT/$1" p
+  [ -d "$cg" ] || return 0
+  for p in $(find "$cg" -name cgroup.procs -exec cat {} + 2>/dev/null); do tr '\0' ' ' < "$PROCROOT/$p/cmdline" 2>/dev/null; echo; done
+}
+# When this runner's own log was last written (seconds since 1970), or 0.
+diag_mtime() {
+  local u=$1 n=${1%.service} f d
+  if [ -e "$UNIT_DIR/$n.container" ]; then
+    podman exec "$n" sh -c 'ls -t /opt/actions-runner/_diag/Runner_*.log 2>/dev/null | head -1 | xargs -r stat -c %Y' 2>/dev/null || echo 0
+  else
+    d=$(systemctl show -p WorkingDirectory --value "$u" 2>/dev/null)
+    f=$(ls -t "$d"/_diag/Runner_*.log 2>/dev/null | head -1)
+    [ -n "$f" ] && stat -c %Y "$f" || echo 0
+  fi
+}
+unit_since() { local t; t=$(systemctl show -p ActiveEnterTimestamp --value "$1" 2>/dev/null); [ -n "$t" ] && date -d "$t" +%s 2>/dev/null || echo 0; }
+
+restart() {  # restart <unit> <why>
+  local u=$1 f="$STATE/wd-${1%.service}.last" prev=0
+  [ -f "$f" ] && prev=$(cat "$f")
+  if [ $(( now - prev )) -lt $MIN_GAP ]; then return; fi
+  log "restarting ${u%.service}: $2"; echo "$now" > "$f"
+  systemctl restart "$u" 2>>"$LOG" || log "  restart of ${u%.service} failed"
+}
+
+for u in "${units[@]}"; do
+  n=${u%.service}
+  st=$(systemctl is-active "$u" 2>/dev/null)
+  case "$st" in
+    active) ;;
+    activating|deactivating|reloading) continue ;;
+    *)  # Stopped. Start it again only if it is meant to run: a Podman runner inside WANT, or a service that is enabled.
+        if [ -n "${podman_unit[$u]:-}" ] || [ "$(systemctl is-enabled "$u" 2>/dev/null)" = enabled ]; then restart "$u" "service was $st"; fi
+        continue ;;
+  esac
+  cmds=$(unit_cmds "$u")
+  if echo "$cmds" | grep -q 'Runner.Worker'; then touch "$STATE/wd-$n.busy"; continue; fi   # running a job: hands off
+  [ -n "$cmds" ] || continue                                                                  # cgroup not readable here: cannot judge
+  if ! echo "$cmds" | grep -q 'Runner.Listener'; then restart "$u" "its listener process is gone"; continue; fi
+  if [ "$refresh" = 1 ]; then restart "$u" "idle after the machine woke up or lost its network"; continue; fi
+  m=$(diag_mtime "$u"); b=$(stat -c %Y "$STATE/wd-$n.busy" 2>/dev/null || echo 0); s=$(unit_since "$u")
+  newest=$m; [ "$b" -gt "$newest" ] && newest=$b; [ "$s" -gt "$newest" ] && newest=$s
+  if [ "$newest" -gt 0 ] && [ $(( now - newest )) -gt $(( STALE_MIN * 60 )) ]; then
+    restart "$u" "idle and silent for $(( (now - newest) / 60 )) min"
+  fi
+done
+[ "$refresh" = 1 ] && rm -f "$STATE/watchdog.refresh"
+# Disk (integration fix for the friend's Windows PC, 2026-11-21: its runners had grown to about 500 GB). Each Podman runner keeps
+# everything its jobs write (checkouts, Godot import caches, Rust builds, Godot and .NET downloads, exports) in its container's
+# own layer for as long as the container lives, which can be weeks. The jobs' own clean-up (tools/ci/free-disk.sh) only acts when
+# the disk looks full, and under WSL the disk always looks nearly empty (a 1 TB virtual disk) while the real file on C: grows.
+# So every DISK_EVERY_MIN minutes: an idle runner whose layer is over DISK_CAP_GB is restarted, which throws its layer away (the
+# runner comes back clean and fetches what it needs on its next job); unused images are removed; and freed space is trimmed so
+# a sparse WSL disk gives it back to Windows. DISK_CAP_GB=0 in /etc/hw-runner.env turns the cap off.
+DISK_CAP_GB=${DISK_CAP_GB:-$(sed -n 's/^DISK_CAP_GB=//p' "$ENVFILE" 2>/dev/null | tail -1)}; DISK_CAP_GB=${DISK_CAP_GB:-20}
+DISK_EVERY_MIN=${DISK_EVERY_MIN:-30}
+disk_last=$(cat "$STATE/disk.tick" 2>/dev/null || echo 0)
+if [ ${#podman_unit[@]} -gt 0 ] && command -v podman >/dev/null && [ $(( now - disk_last )) -ge $(( DISK_EVERY_MIN * 60 )) ]; then
+  echo "$now" > "$STATE/disk.tick"
+  freed=0
+  for u in "${units[@]}"; do
+    [ -n "${podman_unit[$u]:-}" ] && [ "$DISK_CAP_GB" -gt 0 ] 2>/dev/null || continue
+    n=${u%.service}
+    [ "$(systemctl is-active "$u" 2>/dev/null)" = active ] || continue
+    up=$(podman container inspect -f '{{.GraphDriver.Data.UpperDir}}' "$n" 2>/dev/null)
+    [ -n "$up" ] && [ -d "$up" ] || continue
+    gb=$(( $(nice -n 19 ionice -c3 du -sxk "$up" 2>/dev/null | cut -f1) / 1048576 ))
+    echo "$gb" > "$STATE/disk-$n.gb"
+    [ "$gb" -ge "$DISK_CAP_GB" ] || continue
+    # Only between jobs, checked again right before the restart (du can take a while).
+    unit_cmds "$u" | grep -q 'Runner.Worker' && continue
+    unit_cmds "$u" | grep -q 'Runner.Listener' || continue
+    restart "$u" "its disk use is ${gb} GB (cap ${DISK_CAP_GB} GB); a fresh container drops it" && freed=1
+  done
+  # Images no runner uses (an older runner image left by a setup or update that rebuilt it), a day after the last check.
+  if [ $(( now - $(cat "$STATE/prune.tick" 2>/dev/null || echo 0) )) -ge 86400 ]; then
+    echo "$now" > "$STATE/prune.tick"
+    podman image prune -f >/dev/null 2>&1 || true
+    freed=1
+  fi
+  [ "$freed" = 1 ] && sleep 20 && command -v fstrim >/dev/null && fstrim -a >/dev/null 2>&1 || true
+fi
+exit 0
+HWWD_EOF
+  chmod 755 /usr/local/bin/hw-watchdog
+  cat >/etc/systemd/system/hw-watchdog.service <<'EOF'
+[Unit]
+Description=Hearthwood runner watchdog (restarts idle runners with a dead connection)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/hw-watchdog
+EOF
+  cat >/etc/systemd/system/hw-watchdog.timer <<'EOF'
+[Unit]
+Description=Hearthwood runner watchdog, every 2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=10s
+
+[Install]
+WantedBy=timers.target
+EOF
+  systemctl daemon-reload
+  systemctl enable --now hw-watchdog.timer >/dev/null
+  say "Watchdog on. What it did: bash $0 watchdog-log"
+}
+
+start_all() { rm -f "$STATE_DIR/stopped"; local n; for n in $(names); do systemctl start "$n.service" || echo "   ($n didn't start)"; done; say "Runners started."; }
+stop_all()  { mkdir -p "$STATE_DIR"; touch "$STATE_DIR/stopped"; local n; for n in $(names); do systemctl stop "$n.service" 2>/dev/null || true; done; say "Runners stopped. Start again with: bash $0 start"; }
 
 status_all() {
   local n st
@@ -380,6 +569,10 @@ status_all() {
       podman logs --tail 50 "$n" 2>/dev/null | grep -E 'Running job|completed with result|Listening for Jobs' | tail -1 || echo
     else echo; fi
   done
+  # Disk: what the watchdog last measured per runner (it restarts an idle one over DISK_CAP_GB), and the disk as a whole.
+  local d=""; for n in $(names); do [ -f "$STATE_DIR/disk-$n.gb" ] && d="$d $n=$(cat "$STATE_DIR/disk-$n.gb")GB"; done
+  [ -n "$d" ] && echo "Disk per runner:$d (cap ${DISK_CAP_GB:-20} GB each)"
+  df -h / | awk 'NR == 2 { print "Linux disk in use: " $3 }'
   echo "On GitHub: https://github.com/organizations/$ORG/settings/actions/runners"
 }
 
@@ -400,8 +593,17 @@ teardown() {
     done
     unset RUNNER_TOKEN
   fi
-  for n in $(names); do rm -f "$UNIT_DIR/$n.container" "$UNIT_DIR/hw-ci.network"; podman rm -f "$n" >/dev/null 2>&1 || true; done
+  for n in $(names); do rm -f "$UNIT_DIR/$n.container"; rm -rf "${STATE_DIR:?}/$n"; podman rm -f "$n" >/dev/null 2>&1 || true; done
+  # Another runner class on this box (ccx63-split.sh) still uses the shared network, slice, watchdog and image.
+  if ls "$UNIT_DIR"/*.container >/dev/null 2>&1; then
+    systemctl daemon-reload
+    say "Done with $PREFIX*. Other runners on this box are left running."
+    return
+  fi
+  rm -f "$UNIT_DIR/hw-ci.network"
   rm -f /etc/systemd/system/hw-ci.slice
+  systemctl disable --now hw-watchdog.timer >/dev/null 2>&1 || true
+  rm -f /etc/systemd/system/hw-watchdog.service /etc/systemd/system/hw-watchdog.timer /usr/local/bin/hw-watchdog
   systemctl daemon-reload
   rm -rf "$STATE_DIR" "$BUILD_DIR"
   podman rmi -f "$IMAGE" >/dev/null 2>&1 || true
@@ -415,7 +617,7 @@ if [ "${1:-}" = setup-keepcaps ]; then DROP_CAPS=""; set -- setup; fi
 if [ "${1:-}" = setup-big ]; then DROP_CAPS=""; COUNT=2; MEM=8g; RELEASE=1; set -- setup; fi
 if [ "${1:-}" = setup-plain ]; then DROP_CAPS=""; NO_NEW_PRIVS=""; PLAIN=1; set -- setup; fi
 case "${1:-setup}" in
-  setup)    preflight; install_podman; build_image; register_all; write_units; net_check; dotnet_check; start_all; sleep 20; status_all
+  setup)    preflight; install_podman; build_image; register_all; write_units; net_check; dotnet_check; start_all; install_watchdog; sleep 20; status_all
             say "All set. Check: bash $0 status   ·   when done: bash $0 teardown, then delete the box." ;;
   status)   status_all ;;
   diagnose) diagnose ;;
@@ -423,5 +625,11 @@ case "${1:-setup}" in
   stop)     need_root; stop_all ;;
   start)    need_root; start_all ;;
   teardown) teardown ;;
-  *) die "unknown command '$1' (setup, status, check, diagnose, stop, start, teardown)" ;;
+  watchdog-install) install_watchdog ;;
+  # Frees what nothing needs any more and trims it, so a sparse WSL disk gives the space back (the Windows "shrink" runs this
+  # with the runners stopped, which already threw their container layers away).
+  trim)     need_root; podman container prune -f >/dev/null 2>&1 || true; podman image prune -f 2>/dev/null | wc -l | xargs -I{} echo "removed {} unused images"
+            fstrim -av 2>/dev/null || true; df -h / | awk 'NR == 2 { print "Linux disk in use: " $3 }' ;;
+  watchdog-log)     tail -n 40 /var/log/hw-watchdog.log 2>/dev/null || echo "(the watchdog has not needed to do anything yet)"; systemctl list-timers hw-watchdog.timer --no-pager 2>/dev/null | head -3 ;;
+  *) die "unknown command '$1' (setup, status, check, diagnose, stop, start, teardown, trim, watchdog-install, watchdog-log)" ;;
 esac
