@@ -29,8 +29,8 @@
 #  - Changing -Cores/-MemoryGB restarts WSL (all WSL windows close, running jobs are lost). Changing only -Count does not.
 #  - The runners start when you log in to Windows (a hidden scheduled task keeps the Linux system running).
 #  - Disk: the Linux system lives in one file, C:\HearthwoodCI\distro\ext4.vhdx. Each runner's leftovers are capped at
-#    DISK_CAP_GB (20 GB) and cleared between jobs. The file on C: only gets smaller when the disk is "sparse" (setup and
-#    update turn that on where this Windows allows it) or after "shrink", which stops the runners for a few minutes.
+#    DISK_CAP_GB (20 GB) and cleared between jobs, so the file stops growing past about 20 GB per runner. It only gets
+#    smaller after "shrink", which stops the runners for a few minutes and compacts it.
 #  - Not tested on a real PC yet. If a step fails, send the red text to the person who gave you this script.
 #
 # Written for Windows PowerShell 5.1 and newer.
@@ -281,7 +281,6 @@ function Do-Setup {
     & wsl.exe --import $Distro (Join-Path $Dir 'distro') $tar --version 2
     if ($LASTEXITCODE -ne 0) { Die "wsl --import failed (exit $LASTEXITCODE). If the text above mentions virtualization or 0x80370102, turn on virtualization (SVM/VT-x) in the BIOS; if it mentions a missing feature, restart Windows and run this again. Log: $LogFile" }
     Remove-Item $tar -Force
-    [void](Set-Sparse)
     Put-File '/etc/wsl.conf' @'
 [boot]
 systemd=true
@@ -384,7 +383,8 @@ if ($woke) {
 }
 '@).Replace('__DISTRO__', $Distro).Replace('__DIR__', $Dir).Replace('__KEEP__', $Task)
   Set-Content -Path (Join-Path $Dir 'watchdog.ps1') -Value $script -Encoding ASCII
-  $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$(Join-Path $Dir 'watchdog.ps1')`""
+  # conhost --headless: powershell's -WindowStyle Hidden still flashed a window every 2 minutes on the friend's PC (2026-11-21).
+  $action = New-ScheduledTaskAction -Execute 'conhost.exe' -Argument "--headless powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$(Join-Path $Dir 'watchdog.ps1')`""
   $every = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 2) -RepetitionDuration (New-TimeSpan -Days 3650)
   $logon = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
   $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
@@ -423,14 +423,12 @@ function Do-Update {
 # file does (after a trim, which the Linux watchdog runs); otherwise only compacting it with the Linux system stopped does.
 function GB-Of([string]$f) { if (Test-Path $f) { return [math]::Round((Get-Item $f).Length / 1GB, 1) } return 0 }
 
-# Turns on sparse for the Linux disk, so freed space goes back to Windows by itself. The Linux system must be stopped.
-# Older WSL versions do not have it, and newer ones may refuse it as unsafe: then nothing changes and "shrink" still works.
-function Set-Sparse {
+# A sparse disk cannot be compacted (diskpart: "must not be sparse"), and on the friend's PC trimming a sparse one did not give
+# the space back either (2026-11-21). So the disk is kept normal and compacted by "shrink"; this undoes the sparse setting an
+# earlier version of this script made. The Linux system must be stopped. Older WSL versions have no such setting: nothing to undo.
+function Unset-Sparse {
   $ErrorActionPreference = 'Continue'   # Windows PowerShell turns a native program's error text into a stop otherwise
-  $out = (& wsl.exe --manage $Distro --set-sparse true 2>&1 | Out-String) -replace "`0", ''
-  if ($LASTEXITCODE -eq 0) { Say 'The Linux disk now gives freed space back to Windows by itself.'; return $true }
-  Write-Host "  (this WSL does not make the disk give space back by itself: $($out.Trim()). Run shrink now and then instead.)" -ForegroundColor Yellow
-  return $false
+  & wsl.exe --manage $Distro --set-sparse false *> $null
 }
 
 function Do-Shrink {
@@ -447,7 +445,6 @@ function Do-Shrink {
   Apply-Linux ([int]$s.max) 0 ([int]$s.cores) ([int]$s.memGB)
   Run-Linux '/usr/local/bin/hwbox trim'
   Run-Linux 'rm -f /var/lib/hw-ci/disk-*.gb'   # the sizes measured before the shrink are gone with the containers
-  $sparse = $false
   # Keep the watchdogs from starting it again while the disk is worked on.
   Disable-ScheduledTask -TaskName $WinTask -ErrorAction SilentlyContinue | Out-Null
   Disable-ScheduledTask -TaskName $Task -ErrorAction SilentlyContinue | Out-Null
@@ -455,10 +452,7 @@ function Do-Shrink {
   try {
     & wsl.exe --shutdown
     Start-Sleep -Seconds 5
-    $sparse = Set-Sparse
-    # Windows cannot compact a sparse disk (diskpart refuses it, seen on the friend's PC 2026-11-21); a sparse one shrinks
-    # when Linux trims it instead, which happens below once it is running again.
-    if (-not $sparse) {
+    Unset-Sparse
     Say 'Compacting the Linux disk (can take several minutes on a big disk)...'
     $dp = Join-Path $Dir 'compact.txt'
     Set-Content -Path $dp -Encoding ASCII -Value @("select vdisk file=`"$Vhdx`"", 'attach vdisk readonly', 'compact vdisk', 'detach vdisk')
@@ -471,16 +465,11 @@ function Do-Shrink {
       & diskpart.exe /s $dp *> $null
       Remove-Item $dp -Force -ErrorAction SilentlyContinue
     }
-    }
   } finally {
     Enable-ScheduledTask -TaskName $WinTask -ErrorAction SilentlyContinue | Out-Null
     Ensure-KeepAlive
     Wait-Boot
     Apply-Linux ([int]$s.max) ([int]$s.want) ([int]$s.cores) ([int]$s.memGB)
-  }
-  if ($sparse) {
-    Say 'Giving the freed space back to Windows (a trim of the sparse disk)...'
-    Run-Linux 'fstrim -av'
   }
   $after = GB-Of $Vhdx
   Say "The Linux disk went from $before GB to $after GB on C:. The runners are running again."
